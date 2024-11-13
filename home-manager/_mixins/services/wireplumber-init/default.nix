@@ -1,5 +1,6 @@
 {
   lib,
+  osConfig,
   pkgs,
   role,
   username,
@@ -11,8 +12,7 @@ let
     if role == "piceiver" then
       "${pkgs.initialize-wireplumber}/bin/initialize-wireplumber.nu"
     else
-      # todo Keep in sync with the version in NixOs PipeWire config.
-      "${pkgs.unstable.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 80%";
+      "${osConfig.services.pipewire.wireplumber.package}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 80%";
 in
 lib.mkIf (lib.elem username installFor) {
   systemd.user = {
@@ -22,9 +22,15 @@ lib.mkIf (lib.elem username installFor) {
           Description = "Initialize WirePlumber default devices and volumes";
           After = [ "wireplumber.service" ];
           Requires = [ "wireplumber.service" ];
+          X-Restart-Triggers = lib.optionals (role == "piceiver") [
+            "${pkgs.initialize-wireplumber}/bin/initialize-wireplumber.nu"
+          ];
         };
         Service = {
+          # Sleep for 5 seconds to give PipeWire a chance to initialize?
+          ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
           ExecStart = script;
+          # RemainAfterExit = true;
           Type = "oneshot";
         };
       };

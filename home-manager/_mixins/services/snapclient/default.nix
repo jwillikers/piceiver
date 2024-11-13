@@ -26,22 +26,31 @@ lib.mkIf (lib.elem username installFor) {
       Unit = {
         Description = "Snapcast client";
         After = [
+          "pipewire.service"
           "pipewire-pulse.service"
           "wireplumber.service"
+          # The wireplumber-init service ensures the volume is set correctly before playback starts.
+          "wireplumber-init.service"
+        ];
+        PartOf = [
+          "pipewire-pulse.service"
         ];
         Requires = [
-          "pipewire-pulse.service"
+          "wireplumber-init.service"
+        ];
+        Wants = [
+          "pipewire.service"
           "wireplumber.service"
         ];
       };
       Service = {
         ExecStart = "${pkgs.snapcast}/bin/snapclient " + builtins.toString snapcastFlags;
         Restart = "always";
+        RestartSec = 10;
       };
       Install = {
         WantedBy = [
           "default.target"
-          "wireplumber.service"
         ];
       };
     };

@@ -1,5 +1,6 @@
 {
   lib,
+  osConfig,
   pkgs,
   role,
   username,
@@ -30,17 +31,30 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
           "nqptp.service"
           "pipewire.service"
           "wireplumber.service"
+          # The delay from the wireplumber-init service provides enough time for all of the PipeWire nodes to become available.
+          # todo I should probably use a proper `pipewire-ready.target` instead.
+          "wireplumber-init.service"
+        ];
+        # This service needs to be restarted whenever PipeWire is.
+        # If it isn't restarted, it will fallback to the combined stereo sink.
+        PartOf = [
+          "pipewire.service"
         ];
         Requires = [
           "nqptp.service"
-          "pipewire.service"
+          "wireplumber-init.service"
+        ];
+        Wants = [
           "wireplumber.service"
         ];
-        Wants = [ "wireplumber-init.service" ];
+        X-Restart-Triggers = [
+          "${osConfig.environment.etc."shairport-sync.conf".source}"
+        ];
       };
       Service = {
         ExecStart = "${pkgs.shairport-sync}/bin/shairport-sync";
         Restart = "always";
+        RestartSec = 10;
       };
       Install = {
         WantedBy = [ "default.target" ];
