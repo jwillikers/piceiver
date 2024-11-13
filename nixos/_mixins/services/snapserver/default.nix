@@ -13,7 +13,7 @@ lib.mkIf (role == "piceiver") {
     openFirewall = true;
     sampleFormat = "48000:16:2";
     streams = {
-      "Piceiver" = {
+      default = {
         location = "127.0.0.1:4711"; # todo Use IPv6 here when Snapcast supports it.
         query.mode = "client";
         type = "tcp";
