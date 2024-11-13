@@ -8,6 +8,33 @@ lib.mkIf (role == "piceiver") {
   environment.etc."shairport-sync.conf".text = ''
     general = {
       // Seems like 500ms works well here when I stream using PipeWire's RAOP module from my laptop.
+      // The default for the PulseAudio backend is 350ms.
+      audio_backend_buffer_desired_length_in_seconds = 0.5;
+      default_airplay_volume = -12.0;
+      high_threshold_airplay_volume = -8.0;
+      high_volume_idle_timeout_in_minutes = 180;
+      mdns_backend = "avahi";
+      output_backend = "pw";
+      // Use the AirPlay 2 port only.
+      port = 7000;
+      // Only advertise AirPlay 2.
+      regtype = "_airplay._tcp";
+      volume_control_profile = "dasl_tapered";
+    };
+    pw = {
+      sink_target = "snapserver";
+    };
+    sessioncontrol = {
+      session_timeout = 20;
+    };
+    diagnostics = {
+      log_verbosity = 1;
+    };
+  '';
+  environment.etc."shairport-sync-airplay-1.conf".text = ''
+    general = {
+      name = "%H (AirPlay 1️⃣)";
+      // Seems like 500ms works well here when I stream using PipeWire's RAOP module from my laptop.
       // When streaming from an iPhone, it seemed like I could get down to 50ms without a problem.
       // I didn't try lower.
       // The default for the PulseAudio backend is 350ms.
@@ -20,13 +47,15 @@ lib.mkIf (role == "piceiver") {
       volume_control_profile = "dasl_tapered";
     };
     pw = {
+      application_name = "Shairport Sync AirPlay 1";
+      node_name = "Shairport Sync AirPlay 1";
       sink_target = "snapserver";
     };
     sessioncontrol = {
       session_timeout = 20;
     };
     diagnostics = {
-      log_verbosity = 1;
+      log_verbosity = 2;
     };
   '';
   networking.firewall = {

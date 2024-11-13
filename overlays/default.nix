@@ -67,7 +67,7 @@
 
   # Enable AirPlay 2 support in shairport-sync.
   shairport-sync-airplay2 = _final: prev: {
-    shairport-sync = prev.shairport-sync.override { enableAirplay2 = true; };
+    shairport-sync-airplay-2 = prev.shairport-sync.override { enableAirplay2 = true; };
   };
 
   realtime = _final: prev: {
