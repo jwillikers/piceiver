@@ -17,8 +17,8 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
     ];
     settings = {
       audio = {
-        # todo Investigate buffer time.
-        buffer_time = 400;
+        # I'm surprised I don't need a value larger than 1ms here.
+        buffer_time = 1; # Must be greater than 0, default from GStreamer is 1000ms
         mixer = "software";
         mixer_volume = 50;
         output = "pipewiresink client-name=Mopidy target-object=snapserver";
