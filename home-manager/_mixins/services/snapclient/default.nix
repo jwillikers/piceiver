@@ -10,8 +10,7 @@ let
   snapcastFlags =
     [
       "--logsink system"
-      # todo I'm not sure the best buffer time here, but it may need tweaked. pulse:buffer_time=100
-      "--player pulse:buffer_time=75"
+      "--player pulse:buffer_time=10" # Minimum is 10ms, default is 100ms
     ]
     ++ lib.optionals (role == "piceiver") [
       "--host ::1"
