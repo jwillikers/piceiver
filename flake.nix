@@ -99,8 +99,9 @@
         mopidy-pipewire-gstreamer-plugin
         rygel-pipewire-gstreamer-plugin
         realtime
-        shairport-sync-airplay2
         unstablePackages
+        unstable-shairport-sync
+        shairport-sync-airplay2
       ];
       pkgsArmCross = import nixpkgs {
         # inherit system;

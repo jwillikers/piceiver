@@ -320,10 +320,56 @@ To make it possible to switch between outputs, I'd need to add a button and some
 
 === AirPlay
 
-https://www.apple.com/airplay/[AirPlay], specifically Airplay 2, is supported via {Shairport-Sync}.
+https://www.apple.com/airplay/[AirPlay] 1 and 2 are supported via {Shairport-Sync}.
 It works very nicely.
-AirPlay 1 doesn't appear to work at all, however.
-This may be fixed when `shairport-sync` is updated in NixOS 24.11.
+PipeWire's https://docs.pipewire.org/page_module_raop_discover.html[RAOP Discover module] can be used to automatically discover and stream directly to the Piceiver.
+The following instructions document how to accomplish this.
+
+[NOTE]
+====
+Make sure that the ephemeral port range is open in the firewall on the device from which you are streaming.
+====
+
+. Create the configuration directory for PipeWire for your user.
++
+[,sh]
+----
+mkdir --parents ~/.config/pipewire/pipewire.conf.d
+----
+
+. Configure the RAOP Discover module in a config file fragment.
++
+.~/.config/pipewire/pipewire.conf.d/raop-discover.conf
+[,lua]
+----
+context.modules = [
+{   name = libpipewire-module-raop-discover
+    args = {
+        stream.rules = [
+            {   matches = [
+                    {    raop.ip = "~.*"
+                    }
+                ]
+                actions = {
+                    create-stream = {
+                        stream.props = {
+                            media.class = "Audio/Sink"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
+]
+----
+
+. Restart PipeWire.
++
+[,sh]
+----
+systemctl --user restart pipewire
+----
 
 === Bluetooth
 
@@ -435,7 +481,7 @@ The steps here walk through how to do this.
 mkdir --parents ~/.config/pipewire/pipewire.conf.d
 ----
 
-. Drop in and configure the the Snapcast Discover module in a config file fragment.
+. Drop in and configure the Snapcast Discover module in a config file fragment.
 +
 .~/.config/pipewire/pipewire.conf.d/51-snapcast-discover.conf
 [,lua]
@@ -484,11 +530,11 @@ systemctl --user restart pipewire
 
 === Music Assistant
 
-The Piceiver may be integrated with {Music-Assistant} as an external Snapcast server as well as a UPnP/DLNA player provider.
+The Piceiver may be integrated with {Music-Assistant} as an external Snapcast server, an AirPlay playback provider, and a UPnP/DLNA player provider.
 The external Snapcast server option will create a Snapcast stream specific to Music Assistant.
-It may be less disruptive to your Snapcast configuration to use the UPnP/DLNA player provider instead.
-The AirPlay player provider relies on AirPlay 1 and will not work with AirPlay 2 support in shairport-sync enabled.
-It can likewise be incorporated directly in {Home-Assistant} using either the Snapcast or DLNA integrations or directly via Music Assistant.
+This requires manually switching the Snapcast stream back to the default `default` stream after playing anything through Music Assistant, otherwise you'll hear nothing.
+This is a pain, so I recommend using the AirPlay or UPnP/DLNA player providers instead unless you stream everything through Music Assistant.
+The Piceiver can likewise be incorporated directly in {Home-Assistant} using either the Snapcast or DLNA integrations or directly via Music Assistant.
 
 === Synthesizer
 
