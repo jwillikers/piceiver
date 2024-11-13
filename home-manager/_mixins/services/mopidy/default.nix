@@ -18,7 +18,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
     settings = {
       audio = {
         # todo Investigate buffer time.
-        # buffer_time = 200;
+        buffer_time = 400;
         mixer = "software";
         mixer_volume = 50;
         output = "pipewiresink client-name=Mopidy target-object=snapserver";

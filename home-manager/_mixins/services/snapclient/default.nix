@@ -11,7 +11,7 @@ let
     [
       "--logsink system"
       # todo I'm not sure the best buffer time here, but it may need tweaked. pulse:buffer_time=100
-      "--player pulse"
+      "--player pulse:buffer_time=75"
     ]
     ++ lib.optionals (role == "piceiver") [
       "--host ::1"
