@@ -21,7 +21,7 @@ def main [] {
     let pw_dump = (^pw-dump)
     ^wpctl set-default ($pw_dump | get_node_object_id alsa_input.platform-1000110000.pcie-pci-0000_02_00.0.iec958-stereo Audio/Source)
     ^wpctl set-default ($pw_dump | get_node_object_id Combined_Stereo_Sink Audio/Sink)
-    ^wpctl set-volume ($pw_dump | get_node_object_id snapserver Audio/Sink) 60%
+    ^wpctl set-volume ($pw_dump | get_node_object_id snapserver Audio/Sink) 70%
     ^wpctl set-volume ($pw_dump | get_node_object_id alsa_output.platform-1000110000.pcie-pci-0000_02_00.0.iec958-stereo Audio/Sink) 40%
     ^wpctl set-volume ($pw_dump | get_node_object_id alsa_output.platform-soc_sound.stereo-fallback Audio/Sink) 85%
     ^wpctl set-volume ($pw_dump | get_node_object_id alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo Audio/Sink) 80%
