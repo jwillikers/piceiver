@@ -1,0 +1,6 @@
+# Due to rate limiting from gnu.org
+accept = [429]
+
+cache = true
+exclude_path = [".direnv/", "result/"]
+max_cache_age = "2w"

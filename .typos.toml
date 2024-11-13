@@ -1,0 +1,12 @@
+[default]
+extend-ignore-re = [
+  "sha256[[:space:]]*=[[:space:]]*\"[[:alnum:]]+\"",
+  "hash[[:space:]]*=[[:space:]]*\"[[:alnum:]]+\"",
+  # "SHA256:[[:space:]]*[[a-zA-Z0-9+]]+[[:space:]]*",
+]
+
+# [default.extend-identifiers]
+# HDA = "HDA"
+
+[default.extend-words]
+HDA = "HDA"
