@@ -322,7 +322,9 @@ To make it possible to switch between outputs, I'd need to add a button and some
 
 https://www.apple.com/airplay/[AirPlay] 1 and 2 are supported via {Shairport-Sync}.
 It works very nicely.
-PipeWire's https://docs.pipewire.org/page_module_raop_discover.html[RAOP Discover module] can be used to automatically discover and stream directly to the Piceiver.
+The one thing to be aware of is that it doesn't support both 1 and 2 simultaneously.
+It will effectively be set based on the initial connection.
+PipeWire's https://docs.pipewire.org/page_module_raop_discover.html[RAOP Discover module] can be used to automatically discover and stream directly to the Piceiver, using AirPlay 1.
 The following instructions document how to accomplish this.
 
 [NOTE]
@@ -531,6 +533,7 @@ systemctl --user restart pipewire
 === Music Assistant
 
 The Piceiver may be integrated with {Music-Assistant} as an external Snapcast server, an AirPlay playback provider, and a UPnP/DLNA player provider.
+Only AirPlay 1 is supported.
 The external Snapcast server option will create a Snapcast stream specific to Music Assistant.
 This requires manually switching the Snapcast stream back to the default `default` stream after playing anything through Music Assistant, otherwise you'll hear nothing.
 This is a pain, so I recommend using the AirPlay or UPnP/DLNA player providers instead unless you stream everything through Music Assistant.
@@ -651,6 +654,7 @@ Using a new image every time isn't gonna fly with flash storage or the value of 
 After that, I need to figure out how to configure Net-SNMP in NixOS, as monitoring is a really nice feature to have in place.
 
 .Todo
+* Run two instances of Shairport-Sync simultaneously, one for AirPlay 1 and one for AirPlay 2.
 * Use a reverse-proxy for the Snapcast and Mopidy servers?
 * Fix the sub flipping on and off when idle.
 * Auto-mute speakers and subwoofer when nothing is being output.

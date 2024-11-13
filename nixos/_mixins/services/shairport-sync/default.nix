@@ -4,13 +4,14 @@ lib.mkIf (role == "piceiver") {
   boot.kernel.sysctl = {
     "net.ipv4.ip_unprivileged_port_start" = 319;
   };
-  #  I'm still tweaking the volume controls to get things just right.
   # Because this sends audio to Snapcast, the volume is generously scaled up so as not to be too quiet.
   environment.etc."shairport-sync.conf".text = ''
     general = {
-      // Seems like 50ms works fine here.
-      // 0.35 is the default for the pa backend.
-      audio_backend_buffer_desired_length_in_seconds = 0.05;
+      // Seems like 500ms works well here when I stream using PipeWire's RAOP module from my laptop.
+      // When streaming from an iPhone, it seemed like I could get down to 50ms without a problem.
+      // I didn't try lower.
+      // The default for the PulseAudio backend is 350ms.
+      audio_backend_buffer_desired_length_in_seconds = 0.5;
       default_airplay_volume = -12.0;
       high_threshold_airplay_volume = -8.0;
       high_volume_idle_timeout_in_minutes = 180;
