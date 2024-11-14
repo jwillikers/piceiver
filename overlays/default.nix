@@ -22,11 +22,6 @@
     stoken = prev.stoken.override { withGTK3 = false; };
   };
 
-  # Enable AirPlay 2 support in shairport-sync.
-  shairport-sync-airplay2 = _final: prev: {
-    shairport-sync = prev.shairport-sync.override { enableAirplay2 = true; };
-  };
-
   # Expose the PipeWire gstreamer plugin to Mopidy.
   mopidy-pipewire-gstreamer-plugin = _final: prev: {
     mopidy = prev.mopidy.overrideAttrs (_prevAttrs: {
@@ -54,6 +49,25 @@
   # Makes the unstable nixpkgs set accessible through 'pkgs.unstable'
   unstablePackages = final: _prev: {
     unstable = import inputs.nixpkgs-unstable { inherit (final) system; };
+  };
+
+  # Use a newer version of shairport-sync to get the latest bug fixes.
+  # We need fixes for ffmpeg 7 which as-of-yet are unreleased.
+  unstable-shairport-sync = _final: prev: {
+    shairport-sync = prev.shairport-sync.overrideAttrs (_prevAttrs: {
+      version = "4.3.5-dev";
+      src = prev.fetchFromGitHub {
+        repo = "shairport-sync";
+        owner = "mikebrady";
+        rev = "ab6225c1ac1c57f5af50890d722437ec8a921d0d";
+        hash = "sha256-iwyIUUFA5DzTkm/DXvEa3buVX4Dje0P0svteRAKIS20=";
+      };
+    });
+  };
+
+  # Enable AirPlay 2 support in shairport-sync.
+  shairport-sync-airplay2 = _final: prev: {
+    shairport-sync-airplay-2 = prev.shairport-sync.override { enableAirplay2 = true; };
   };
 
   realtime = _final: prev: {

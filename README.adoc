@@ -44,7 +44,7 @@ endif::[]
 This project is a build of a 2.1 channel receiver based on the Raspberry Pi.
 Out-of-the-box, it takes in audio from the digital optical input.
 The receiver leverages {PipeWire} and {WirePlumber} for the audio routing and session management.
-The software and configuration is built on NixOS and managed through a Nix flake in this repository.
+The software and configuration are built on NixOS and managed through a Nix flake in this repository.
 {Nix} has quite up-to-date software, is extensively customizable, and ensures that builds are reproducible.
 
 .Features
@@ -163,6 +163,7 @@ Installation is done by building a system image which is flashed directly to an 
 This can all be built and customized locally with {Nix}.
 Unfortunately, unless you're building this on an aarch64 machine, it will take a significant amount of time to build.
 The initial build probably took about two full days for me.
+I need to tweak the kernel config to avoid building a bunch of unnecessary things, like drivers for AMD and Nouveau GPUs.
 
 . Install an implementation of Nix, such as https://lix.systems[Lix] demonstrated in the following command.
 Enable support for flakes when prompted.
@@ -319,10 +320,57 @@ To make it possible to switch between outputs, I'd need to add a button and some
 
 === AirPlay
 
-https://www.apple.com/airplay/[AirPlay], specifically Airplay 2, is supported via {Shairport-Sync}.
+https://www.apple.com/airplay/[AirPlay] 1 and 2 are supported via {Shairport-Sync}.
+Two instances of Shairport-Sync run simultaneously to provide support for both AirPlay 1 and AirPlay 2.
 It works very nicely.
-AirPlay 1 doesn't appear to work at all, however.
-This may be fixed when `shairport-sync` is updated in NixOS 24.11.
+PipeWire's https://docs.pipewire.org/page_module_raop_discover.html[RAOP Discover module] can be used to automatically discover and stream directly to the Piceiver.
+The following instructions document how to accomplish this.
+
+[NOTE]
+====
+Make sure that the ephemeral port range is open in the firewall on the device from which you are streaming.
+====
+
+. Create the configuration directory for PipeWire for your user.
++
+[,sh]
+----
+mkdir --parents ~/.config/pipewire/pipewire.conf.d
+----
+
+. Configure the RAOP Discover module in a config file fragment.
++
+.~/.config/pipewire/pipewire.conf.d/raop-discover.conf
+[,lua]
+----
+context.modules = [
+{   name = libpipewire-module-raop-discover
+    args = {
+        stream.rules = [
+            {   matches = [
+                    {    raop.ip = "~.*"
+                    }
+                ]
+                actions = {
+                    create-stream = {
+                        stream.props = {
+                            media.class = "Audio/Sink"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
+]
+----
+
+. Restart PipeWire.
++
+[,sh]
+----
+systemctl --user restart pipewire
+----
 
 === Bluetooth
 
@@ -434,7 +482,7 @@ The steps here walk through how to do this.
 mkdir --parents ~/.config/pipewire/pipewire.conf.d
 ----
 
-. Drop in and configure the the Snapcast Discover module in a config file fragment.
+. Drop in and configure the Snapcast Discover module in a config file fragment.
 +
 .~/.config/pipewire/pipewire.conf.d/51-snapcast-discover.conf
 [,lua]
@@ -483,11 +531,11 @@ systemctl --user restart pipewire
 
 === Music Assistant
 
-The Piceiver may be integrated with {Music-Assistant} as an external Snapcast server as well as a UPnP/DLNA player provider.
+The Piceiver may be integrated with {Music-Assistant} as an external Snapcast server, an AirPlay playback provider, and a UPnP/DLNA player provider.
 The external Snapcast server option will create a Snapcast stream specific to Music Assistant.
-It may be less disruptive to your Snapcast configuration to use the UPnP/DLNA player provider instead.
-The AirPlay player provider relies on AirPlay 1 and will not work with AirPlay 2 support in shairport-sync enabled.
-It can likewise be incorporated directly in {Home-Assistant} using either the Snapcast or DLNA integrations or directly via Music Assistant.
+This requires manually switching the Snapcast stream back to the default `default` stream after playing anything through Music Assistant, otherwise you'll hear nothing.
+This is a pain, so I recommend using the AirPlay or UPnP/DLNA player providers instead unless you stream everything through Music Assistant.
+The Piceiver can likewise be incorporated directly in {Home-Assistant} using either the Snapcast or DLNA integrations or directly via Music Assistant.
 
 === Synthesizer
 

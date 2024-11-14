@@ -7,7 +7,7 @@ repository:
   # A URL with more information about the repository
   # homepage: ""
   # A comma-separated list of topics to set on the repository
-  topics: airplay, audio, bluetooth, deploy-rs, dlna, fluidsynth, home-assistant, image, jellyfin, low-latency, music-assistant, midi, multi-room, nix, nixos, pi, pipewire, raspberry, realtime, receiver, rygel, sbc, sd, shairport-sync, snapcast, stereo, synth, synthesizer, upnp, wireplumber,
+  topics: airplay, audio, bluetooth, dlna-upnp, home-assistant, jellyfin, low-latency, music-assistant, midi, multi-room, nixos, pipewire, raspberry-pi, realtime, receiver, snapcast, stereo, synthesizer, wireplumber,
   # Either `true` to make the repository private, or `false` to make it public.
   private: false
   # Either `true` to enable issues for this repository, `false` to disable them.

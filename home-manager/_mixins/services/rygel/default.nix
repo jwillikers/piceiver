@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  osConfig,
   pkgs,
   role,
   username,
@@ -87,24 +88,29 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
     "rygel" = {
       Unit = {
         Description = "Rygel DLNA/UPnP Digital Media Renderer";
-        After = [ "wireplumber.service" ];
-        Requires = [ "wireplumber.service" ];
+        After = [
+          "pipewire.service"
+          "wireplumber.service"
+          # The delay from the wireplumber-init service provides enough time for all of the PipeWire nodes to become available.
+          "wireplumber-init.service"
+        ];
+        PartOf = [ "pipewire.service" ];
+        Requires = [ "wireplumber-init.service" ];
+        Wants = [ "wireplumber.service" ];
         X-Restart-Triggers = [
-          "/etc/rygel.conf"
-          "${config.xdg.configHome}/rygel.conf"
+          "${osConfig.environment.etc."rygel.conf".source}"
+          "${config.home.file."${config.xdg.configHome}/rygel.conf".source}"
         ];
       };
       Service = {
         BusName = "org.gnome.Rygel1";
         ExecStart = "${pkgs.gnome.rygel}/bin/rygel";
         Restart = "always";
+        RestartSec = 10;
         Type = "dbus";
       };
       Install = {
-        WantedBy = [
-          "default.target"
-          "wireplumber.service"
-        ];
+        WantedBy = [ "default.target" ];
       };
     };
   };

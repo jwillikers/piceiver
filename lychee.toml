@@ -1,5 +1,8 @@
-# Due to rate limiting from gnu.org
-accept = [429]
+exclude = [
+  # These websites return 403 forbidden codes for GitHub runners.
+  '^https://www\.digikey\.com',
+  '^https://www\.raspberrypi\.com',
+]
 
 cache = true
 exclude_path = [".direnv/", "result/"]

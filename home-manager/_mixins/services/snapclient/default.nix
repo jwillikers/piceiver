@@ -10,8 +10,7 @@ let
   snapcastFlags =
     [
       "--logsink system"
-      # todo I'm not sure the best buffer time here, but it may need tweaked. pulse:buffer_time=100
-      "--player pulse"
+      "--player pulse:buffer_time=10" # Minimum is 10ms, default is 100ms
     ]
     ++ lib.optionals (role == "piceiver") [
       "--host ::1"
@@ -26,23 +25,26 @@ lib.mkIf (lib.elem username installFor) {
       Unit = {
         Description = "Snapcast client";
         After = [
+          "pipewire.service"
           "pipewire-pulse.service"
           "wireplumber.service"
+          # The wireplumber-init service ensures the volume is set correctly before playback starts.
+          "wireplumber-init.service"
         ];
-        Requires = [
-          "pipewire-pulse.service"
+        PartOf = [ "pipewire-pulse.service" ];
+        Requires = [ "wireplumber-init.service" ];
+        Wants = [
+          "pipewire.service"
           "wireplumber.service"
         ];
       };
       Service = {
         ExecStart = "${pkgs.snapcast}/bin/snapclient " + builtins.toString snapcastFlags;
         Restart = "always";
+        RestartSec = 10;
       };
       Install = {
-        WantedBy = [
-          "default.target"
-          "wireplumber.service"
-        ];
+        WantedBy = [ "default.target" ];
       };
     };
   };
