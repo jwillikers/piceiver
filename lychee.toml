@@ -1,8 +1,6 @@
-# accept = [429]
-
 exclude = [
+  # These websites return 403 forbidden codes for GitHub runners.
   '^https://www\.digikey\.com',
-  # Raspberry Pi's website returns 403 forbidden codes for GitHub runners.
   '^https://www\.raspberrypi\.com',
 ]
 
