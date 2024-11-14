@@ -93,16 +93,10 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
           "wireplumber.service"
           # The delay from the wireplumber-init service provides enough time for all of the PipeWire nodes to become available.
           "wireplumber-init.service"
-         ];
-        PartOf = [
-          "pipewire.service"
         ];
-        Requires = [
-          "wireplumber-init.service"
-        ];
-        Wants = [
-          "wireplumber.service"
-        ];
+        PartOf = [ "pipewire.service" ];
+        Requires = [ "wireplumber-init.service" ];
+        Wants = [ "wireplumber.service" ];
         X-Restart-Triggers = [
           "${osConfig.environment.etc."rygel.conf".source}"
           "${config.home.file."${config.xdg.configHome}/rygel.conf".source}"
@@ -116,9 +110,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         Type = "dbus";
       };
       Install = {
-        WantedBy = [
-          "default.target"
-        ];
+        WantedBy = [ "default.target" ];
       };
     };
   };

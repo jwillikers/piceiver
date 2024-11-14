@@ -39,9 +39,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         ];
         # This service needs to be restarted whenever PipeWire is.
         # If it isn't restarted, it will fallback to the combined stereo sink.
-        PartOf = [
-          "pipewire.service"
-        ];
+        PartOf = [ "pipewire.service" ];
         Requires = [
           "nqptp.service"
           "wireplumber-init.service"
@@ -50,9 +48,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
           "shairport-sync-airplay-1.service"
           "wireplumber.service"
         ];
-        X-Restart-Triggers = [
-          "${osConfig.environment.etc."shairport-sync.conf".source}"
-        ];
+        X-Restart-Triggers = [ "${osConfig.environment.etc."shairport-sync.conf".source}" ];
       };
       Service = {
         ExecStart = "${pkgs.shairport-sync-airplay-2}/bin/shairport-sync";
@@ -75,21 +71,15 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         ];
         # This service needs to be restarted whenever PipeWire is.
         # If it isn't restarted, it will fallback to the combined stereo sink.
-        PartOf = [
-          "pipewire.service"
-        ];
-        Requires = [
-          "wireplumber-init.service"
-        ];
-        Wants = [
-          "wireplumber.service"
-        ];
-        X-Restart-Triggers = [
-          "${osConfig.environment.etc."shairport-sync-airplay-1.conf".source}"
-        ];
+        PartOf = [ "pipewire.service" ];
+        Requires = [ "wireplumber-init.service" ];
+        Wants = [ "wireplumber.service" ];
+        X-Restart-Triggers = [ "${osConfig.environment.etc."shairport-sync-airplay-1.conf".source}" ];
       };
       Service = {
-        ExecStart = "${pkgs.shairport-sync}/bin/shairport-sync --configfile=${osConfig.environment.etc."shairport-sync-airplay-1.conf".source}";
+        ExecStart = "${pkgs.shairport-sync}/bin/shairport-sync --configfile=${
+          osConfig.environment.etc."shairport-sync-airplay-1.conf".source
+        }";
         Restart = "always";
         RestartSec = 10;
       };
