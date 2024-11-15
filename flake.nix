@@ -95,9 +95,7 @@
       overlays = import ./overlays { inherit inputs; };
       overlaysList = with overlays; [
         additions
-        headless
-        mopidy-pipewire-gstreamer-plugin
-        rygel-pipewire-gstreamer-plugin
+        modifications
         realtime
         unstablePackages
         unstable-shairport-sync

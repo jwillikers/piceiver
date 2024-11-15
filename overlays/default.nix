@@ -3,15 +3,77 @@
   # Add custom packages from the pkgs directory
   additions = final: _prev: import ../pkgs final.pkgs;
 
-  # deploy-rs-overlay = inputs.deploy-rs.overlays.default;
-  # deploy-rs-package = final: prev: { deploy-rs = { inherit (final) deploy-rs; lib = final.deploy-rs.lib; }; };
-
   # Disable unnecessary graphics support.
-  headless = _final: prev: {
+  modifications = final: prev: {
     dbus = prev.dbus.override { x11Support = false; };
+    ffmpeg = prev.ffmpeg.override {
+      ffmpegVariant = "headless";
+    };
+    gnome = prev.gnome.overrideScope (finalGnome: prevGnome: {
+      # Disable GTK support and add PipeWire GStreamer plugin.
+      rygel = prevGnome.rygel.overrideAttrs(prevAttrs: {
+        nativeBuildInputs = (prev.lib.lists.remove prev.wrapGAppsHook3 prevAttrs.nativeBuildInputs) ++ [ prev.wrapGAppsNoGuiHook ];
+        buildInputs = (prev.lib.lists.remove final.gtk3 prevAttrs.buildInputs) ++ [ prev.pipewire prev.gdk-pixbuf ];
+        mesonFlags = prevAttrs.mesonFlags ++ [
+          "-Dgtk=disabled"
+          "-Dx11=disabled"
+        ];
+        patches = prevAttrs.patches or [] ++ [
+          (prev.fetchpatch2 {
+            url = "https://gitlab.gnome.org/jwillikers/rygel/-/commit/8c7052ac7d61f190adeb1ef4251e6c7c77993872.patch";
+            hash = "sha256-dfsZ0FKYBW8KzpPk/5WfX454BOscCXVkkPBuftVCRoQ=";
+          })
+        ];
+      });
+    });
     # todo Make it possible to disable graphviz support in libcamera.
     graphviz = prev.graphviz.override { withXorg = false; };
-    gst-plugins-base = prev.gst-plugins-base.override { enableX11 = false; };
+    gst_all_1 = prev.gst_all_1 // {
+      gst-plugins-base = prev.gst_all_1.gst-plugins-base.override {
+        enableX11 = false;
+        enableWayland = false;
+      };
+      gst-plugins-good = prev.gst_all_1.gst-plugins-good.override {
+        enableX11 = false;
+        enableWayland = false;
+      };
+      gst-plugins-rs = prev.gst_all_1.gst-plugins-rs.override {
+        withGtkPlugins = false;
+      };
+    };
+    gtk3 = (prev.gtk3.override {
+      broadwaySupport = false;
+      cupsSupport = false;
+      trackerSupport = false;
+      # todo Why does it break the build when I disable X11 support?
+      # x11Support = false;
+      xineramaSupport = false;
+      # waylandSupport = false;
+    # }).overrideAttrs (prevAttrs: {
+      # mesonFlags = prevAttrs.mesonFlags ++ [ "-Dwayland_backend=false" ];
+    });
+    gtk4 = (prev.gtk4.override {
+      broadwaySupport = false;
+      cupsSupport = false;
+      trackerSupport = false;
+      # x11Support = false;
+      # todo Fix xinerama support is required when x11Support is enabled.
+      # xineramaSupport = false;
+      vulkanSupport = false;
+      # waylandSupport = false;
+    # }).overrideAttrs (prevAttrs: {
+      # mesonFlags = prevAttrs.mesonFlags ++ [ "-Dwayland-backend=false" ];
+    });
+    # libepoxy = prev.libepoxy.override {
+    #   x11Support = false;
+    # };
+    # Add PipeWire GStreamer plugin.
+    mopidy = prev.mopidy.overrideAttrs (prevAttrs: {
+        buildInputs = prevAttrs.buildInputs ++ [ prev.pipewire ];
+    });
+    nushell = prev.nushell.override {
+      withDefaultFeatures = false;
+    };
     pipewire = prev.pipewire.override {
       # todo Add support for disabling x11Support in vulkan-loader package.
       vulkanSupport = false;
@@ -20,29 +82,10 @@
     # Not sure how to entirely disable openconnect which is pulled in by NetworkManager.
     # So instead, just disable the GTK dependency that it indirectly pulls in.
     stoken = prev.stoken.override { withGTK3 = false; };
-  };
-
-  # Expose the PipeWire gstreamer plugin to Mopidy.
-  mopidy-pipewire-gstreamer-plugin = _final: prev: {
-    mopidy = prev.mopidy.overrideAttrs (_prevAttrs: {
-      preFixup = ''
-        gappsWrapperArgs+=(
-          # Gstreamer PipeWire plugin
-          --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${prev.pipewire}/lib/gstreamer-1.0"
-        )
-      '';
-    });
-  };
-
-  # Expose the PipeWire gstreamer plugin to Rygel.
-  rygel-pipewire-gstreamer-plugin = _final: prev: {
-    gnome.rygel = prev.gnome.rygel.overrideAttrs (_prevAttrs: {
-      preFixup = ''
-        gappsWrapperArgs+=(
-          # Gstreamer PipeWire plugin
-          --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${prev.pipewire}/lib/gstreamer-1.0"
-        )
-      '';
+    libxkbcommon = prev.libxkbcommon.overrideAttrs(prevAttrs : {
+      nativeBuildInputs = prev.lib.lists.remove prev.xorg.xorgserver prevAttrs.nativeBuildInputs;
+      buildInputs = prev.lib.lists.remove prev.xorg.libxcb prevAttrs.buildInputs;
+      mesonFlags = prevAttrs.mesonFlags ++ [ "-Denable-x11=false" ];
     });
   };
 
@@ -65,7 +108,7 @@
     });
   };
 
-  # Enable AirPlay 2 support in shairport-sync.
+  # Add a separate package for shairport-sync with AirPlay 2 support enabled.
   shairport-sync-airplay2 = _final: prev: {
     shairport-sync-airplay-2 = prev.shairport-sync.override { enableAirplay2 = true; };
   };
