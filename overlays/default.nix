@@ -115,6 +115,9 @@
 
   realtime = _final: prev: {
     rpi-kernels.v6_6_54.bcm2711 = prev.rpi-kernels.v6_6_54.bcm2711.override (prevKernel: {
+      autoModules = false;
+      kernelPreferBuiltin = true;
+
       modDirVersion = "6.6.54-rt44";
       structuredExtraConfig =
         with prev.lib.kernel;
@@ -126,6 +129,67 @@
           SND_HDA_GENERIC = yes;
           # SND_HDA_INTEL = yes;
           # SND_HDA_PREALLOC_SIZE = 2048;
+
+          # todo What happens if I comment these out next?
+
+          # EXT2_FS = no;
+          # EXT3_FS = no;
+          # F2FS_FS = prev.lib.mkForce no;
+          # GFS2_FS = no;
+          # JFS_FS = no;
+          # MINIX_FS = no;
+          # NFS_FS = no;
+          # NFS_V2 = no;
+          # NFS_V3 = no;
+          # NFS_V4 = no;
+          # NFSD = no;
+          # REISERFS_FS = no;
+          # SQUASHFS = no;
+          # XFS_FS = no;
+
+          # Disable infiniband.
+          # INFINIBAND = prev.lib.mkForce no;
+          # INFINIBAND_IPOIB = prev.lib.mkForce no;
+          # INFINIBAND_IPOIB_CM = prev.lib.mkForce no;
+
+          # # Disable Nouveau
+          # DRM_NOUVEAU = no;
+
+          # # Disable AMD
+          # DRM_AMDGPU = no;
+          # # DRM_AMDGPU_SI = prev.lib.mkForce no;
+          # # DRM_AMDGPU_CIK = prev.lib.mkForce no;
+          # # DRM_AMD_DC_DCN1_0 = prev.lib.mkForce no;
+          # # DRM_AMD_DC_DCN2_0 = prev.lib.mkForce no;
+          # # DRM_AMD_DC_DCN2_1 = prev.lib.mkForce no;
+          # # DRM_AMD_DC_DCN3_0 = prev.lib.mkForce no;
+          # # DRM_AMD_DC_DCN = prev.lib.mkForce no;
+          # # DRM_AMD_DC_FP = prev.lib.mkForce no;
+          # # DRM_AMD_DC_HDCP = prev.lib.mkForce no;
+          # # DRM_AMD_DC_SI = prev.lib.mkForce no;
+          # # DRM_AMD_ACP = prev.lib.mkForce no;
+          # # DRM_AMD_SECURE_DISPLAY = prev.lib.mkForce no;
+          # # DRM_AMD_ISP = prev.lib.mkForce no;
+          # # DRM_NOUVEAU_GSP_DEFAULT = prev.lib.mkForce no;
+          # # DEVICE_PRIVATE = prev.lib.mkForce no;
+          # # DRM_NOUVEAU_SVM = prev.lib.mkForce no;
+
+          # # Audio
+          # SND_HDA_CODEC_CS8409 = prev.lib.mkForce no;
+
+          # # misc
+          # X86_AMD_PLATFORM_DEVICE = prev.lib.mkForce no;
+          # X86_PLATFORM_DRIVERS_DELL = prev.lib.mkForce no;
+          # X86_PLATFORM_DRIVERS_HP = prev.lib.mkForce no;
+          # SUN8I_DE2_CCU = prev.lib.mkForce no;
+          # CHROME_PLATFORMS = prev.lib.mkForce no;
+          # CROS_EC = prev.lib.mkForce no;
+          # CROS_EC_I2C = prev.lib.mkForce no;
+          # CROS_EC_SPI = prev.lib.mkForce no;
+          # CROS_EC_LPC = prev.lib.mkForce no;
+          # CROS_EC_ISHTP = prev.lib.mkForce no;
+          # CROS_KBD_LED_BACKLIGHT = prev.lib.mkForce no;
+          # TCG_TIS_SPI_CR50 = prev.lib.mkForce no;
 
           # realtime
           # PREEMPT_RT was merged in to kernel 6.12.
@@ -152,6 +216,8 @@
         [ rt-patch ] ++ prevKernel.kernelPatches;
     });
     rpi-kernels.v6_6_54.bcm2712 = prev.rpi-kernels.v6_6_54.bcm2712.override (prevKernel: {
+      autoModules = false;
+      kernelPreferBuiltin = true;
       modDirVersion = "6.6.54-rt44";
       structuredExtraConfig =
         with prev.lib.kernel;
@@ -160,6 +226,53 @@
           SND_HDA_GENERIC = yes;
           # SND_HDA_INTEL = yes;
           # SND_HDA_PREALLOC_SIZE = 2048;
+
+          # # Disable infiniband.
+          # INFINIBAND = prev.lib.mkForce no;
+          # INFINIBAND_IPOIB = prev.lib.mkForce no;
+          # INFINIBAND_IPOIB_CM = prev.lib.mkForce no;
+
+          # # Disable Nouveau
+          # DRM_NOUVEAU = no;
+
+          # # Disable AMD
+          # DRM_AMDGPU = no;
+          # DRM_AMDGPU_SI = prev.lib.mkForce no;
+          # DRM_AMDGPU_CIK = prev.lib.mkForce no;
+          # DRM_AMD_DC_DCN1_0 = prev.lib.mkForce no;
+          # DRM_AMD_DC_DCN2_0 = prev.lib.mkForce no;
+          # DRM_AMD_DC_DCN2_1 = prev.lib.mkForce no;
+          # DRM_AMD_DC_DCN3_0 = prev.lib.mkForce no;
+          # DRM_AMD_DC_DCN = prev.lib.mkForce no;
+          # DRM_AMD_DC_FP = prev.lib.mkForce no;
+          # DRM_AMD_DC_HDCP = prev.lib.mkForce no;
+          # DRM_AMD_DC_SI = prev.lib.mkForce no;
+          # DRM_AMD_ACP = prev.lib.mkForce no;
+          # DRM_AMD_SECURE_DISPLAY = prev.lib.mkForce no;
+          # DRM_AMD_ISP = prev.lib.mkForce no;
+          # DRM_NOUVEAU_GSP_DEFAULT = prev.lib.mkForce no;
+          # DEVICE_PRIVATE = prev.lib.mkForce no;
+          # DRM_NOUVEAU_SVM = prev.lib.mkForce no;
+
+          # # Audio
+          # SND_HDA_CODEC_CS8409 = prev.lib.mkForce no;
+
+          # # misc
+          # X86_AMD_PLATFORM_DEVICE = prev.lib.mkForce no;
+          # X86_PLATFORM_DRIVERS_DELL = prev.lib.mkForce no;
+          # X86_PLATFORM_DRIVERS_HP = prev.lib.mkForce no;
+          # SUN8I_DE2_CCU = prev.lib.mkForce no;
+          # CHROME_PLATFORMS = prev.lib.mkForce no;
+          # CROS_EC = prev.lib.mkForce no;
+          # CROS_EC_I2C = prev.lib.mkForce no;
+          # CROS_EC_SPI = prev.lib.mkForce no;
+          # CROS_EC_LPC = prev.lib.mkForce no;
+          # CROS_EC_ISHTP = prev.lib.mkForce no;
+          # CROS_KBD_LED_BACKLIGHT = prev.lib.mkForce no;
+          # TCG_TIS_SPI_CR50 = prev.lib.mkForce no;
+
+          # todo try
+          # SCSI = no;
 
           # realtime
           # PREEMPT_RT was merged in to kernel 6.12.
