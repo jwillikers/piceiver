@@ -144,8 +144,7 @@
         # todo I should add the overlays as an output, but they must be outside eachDefaultSystem.
         # inherit overlays;
         apps = {
-          inherit (nix-update-scripts.apps.${system}) update-nix-direnv;
-          inherit (nix-update-scripts.apps.${system}) update-nixos-release;
+          inherit (nix-update-scripts.apps.${system}) update-nix-direnv update-nixos-release;
         };
         devShells.default = mkShell {
           inherit (pre-commit) shellHook;
