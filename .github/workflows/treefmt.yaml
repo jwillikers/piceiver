@@ -37,9 +37,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v16
       - uses: DeterminateSystems/magic-nix-cache-action@v8
       - name: Run treefmt
-        # todo Use when updated to NixOS 24.11.
-        # run: nix develop --command treefmt --ci
-        run: nix develop --command treefmt --fail-on-change --no-cache
+        run: nix develop --command treefmt --ci
       - uses: reviewdog/action-suggester@v1
         with:
           fail_on_error: true

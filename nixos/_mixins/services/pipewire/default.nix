@@ -45,14 +45,12 @@ in
       };
     };
     configPackages = lib.optionals (role == "piceiver") [ pkgs.pipewire-config ];
-    package = pkgs.unstable.pipewire;
     pulse.enable = true;
     socketActivation = false;
     wireplumber = {
       configPackages = [
         pkgs.wireplumber-optimize-usb-config
       ] ++ lib.optionals (role == "piceiver") [ pkgs.wireplumber-config ];
-      package = pkgs.unstable.wireplumber;
     };
   };
 }

@@ -29,7 +29,7 @@ lib.mkIf (role == "piceiver") {
   hardware = {
     bluetooth = {
       enable = true;
-      package = pkgs.unstable.bluez-experimental;
+      package = pkgs.bluez-experimental;
       settings = {
         General = {
           DiscoverableTimeout = 300;

@@ -104,7 +104,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
       };
       Service = {
         BusName = "org.gnome.Rygel1";
-        ExecStart = "${pkgs.gnome.rygel}/bin/rygel";
+        ExecStart = "${pkgs.rygel}/bin/rygel";
         Restart = "always";
         RestartSec = 10;
         Type = "dbus";
