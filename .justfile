@@ -54,6 +54,6 @@ alias u := update
 alias up := update
 
 update:
-    nix run '.#update-nix-direnv'
-    nix run '.#update-nixos-release'
+    nix run ".#update-nix-direnv"
+    nix run ".#update-nixos-release"
     nix flake update
