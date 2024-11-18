@@ -16,6 +16,7 @@
     inputs.home-manager.nixosModules.home-manager
     inputs.nix-index-database.nixosModules.nix-index
     inputs.raspberry-pi-nix.nixosModules.raspberry-pi
+    inputs.raspberry-pi-nix.nixosModules.sd-image
     # inputs.sops-nix.nixosModules.sops
     (modulesPath + "/installer/scan/not-detected.nix")
     ./_mixins/features
