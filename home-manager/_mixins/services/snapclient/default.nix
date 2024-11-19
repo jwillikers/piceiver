@@ -40,7 +40,7 @@ lib.mkIf (lib.elem username installFor) {
       };
       Service = {
         ExecStart = "${pkgs.snapcast}/bin/snapclient " + builtins.toString snapcastFlags;
-        Restart = "always";
+        Restart = "on-failure";
         RestartSec = 10;
       };
       Install = {
