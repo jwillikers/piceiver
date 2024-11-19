@@ -80,10 +80,13 @@
     # Not sure how to entirely disable openconnect which is pulled in by NetworkManager.
     # So instead, just disable the GTK dependency that it indirectly pulls in.
     stoken = prev.stoken.override { withGTK3 = false; };
-    libxkbcommon = prev.libxkbcommon.overrideAttrs(prevAttrs : {
+    libxkbcommon = prev.libxkbcommon.overrideAttrs(prevAttrs: {
       nativeBuildInputs = prev.lib.lists.remove prev.xorg.xorgserver prevAttrs.nativeBuildInputs;
       buildInputs = prev.lib.lists.remove prev.xorg.libxcb prevAttrs.buildInputs;
       mesonFlags = prevAttrs.mesonFlags ++ [ "-Denable-x11=false" ];
+    });
+    vips = prev.vips.overrideAttrs(prevAttrs: {
+      buildInputs = prev.lib.lists.remove prev.matio prevAttrs.buildInputs;
     });
   };
 
