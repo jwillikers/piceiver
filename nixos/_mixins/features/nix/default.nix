@@ -16,6 +16,8 @@ in
       options = "--delete-older-than 30d";
     };
     settings = {
+      accept-flake-config = true;
+      auto-optimise-store = true;
       experimental-features = "flakes nix-command";
       # Disable global registry
       flake-registry = "";
