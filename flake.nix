@@ -26,7 +26,7 @@
     home-manager = {
       # todo Use upstream when my fixes get merged for cross-compiling Mopidy with plugins.
       # url = "github:nix-community/home-manager/release-24.05";
-      url = "github:jwillikers/home-manager/mopidy-fixes";
+      url = "github:jwillikers/home-manager/mopidy-fixes-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # todo This is probably unnecessary here.

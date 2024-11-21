@@ -102,16 +102,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1732220153,
-        "narHash": "sha256-3HVd+s41gaCygyrri9UtNnhlZhj0f8W9jbOxh4F/8BY=",
+        "lastModified": 1732220584,
+        "narHash": "sha256-FfHmMF7JGZonJX6PzR653tPKM5Jl4E6k3Em2FqwiCSg=",
         "owner": "jwillikers",
         "repo": "home-manager",
-        "rev": "543fb872fae7f078ebaf03d9ed7829a19d32c744",
+        "rev": "678f9f7ded755ca4b11dc345721dbb46d46c2ce6",
         "type": "github"
       },
       "original": {
         "owner": "jwillikers",
-        "ref": "mopidy-fixes",
+        "ref": "mopidy-fixes-24.11",
         "repo": "home-manager",
         "type": "github"
       }
