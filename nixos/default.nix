@@ -80,7 +80,11 @@
 
   # Otherwise, the realtime overlay doesn't take.
   # Probably because it needs to be evaluated after tho raspberry-pi-nix module.
-  nixpkgs.overlays = [ overlays.realtime ];
+  nixpkgs.overlays = [
+    overlays.allow-missing-modules
+    overlays.ccache
+    overlays.realtime
+  ];
 
   programs = {
     command-not-found.enable = false;

@@ -95,7 +95,9 @@
       overlays = import ./overlays { inherit inputs; };
       overlaysList = with overlays; [
         additions
+        ccache
         modifications
+        allow-missing-modules
         realtime
         unstablePackages
         unstable-shairport-sync

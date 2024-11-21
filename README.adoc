@@ -187,10 +187,43 @@ git clone git@github.com:jwillikers/piceiver.git
 cd piceiver
 ----
 
+. Configure ccache support for Nix.
+These instructions are for non-NixOS.
+See the https://nixos.wiki/wiki/CCache[NixOS Wiki CCache page] for details, including how to configure ccache for NixOS.
+
+.. Create the ccache cache directory.
++
+[,sh]
+----
+sudo mkdir --mode=0770 --parents /nix/var/cache/ccache
+----
+
+.. Set ownership of the ccache cache directory.
++
+[,sh]
+----
+sudo chown root:nixbld /nix/var/cache/ccache
+----
+
+.. Configure the ccache directory as an extra sandbox path for Nix.
++
+./etc/nix/nix.conf
+[,ini]
+----
+extra-sandbox-paths = /nix/var/cache/ccache
+----
+
+.. Restart the Nix daemon for the change to take effect.
++
+[,sh]
+----
+sudo systemctl restart nix-daemon.service
+----
+
 . Build the SD card image.
 Prefix the command with `systemd-inhibit` to prevent your computer from sleeping.
 This will take a long time.
-Like, days in my case.
+Like, [.line-through]#two days# a day in my case.
 The default, `basic-sd-image` package, produces a minimal image that requires no extra configuration.
 There is an alternative package, `full-sd-image`, which is more fully-featured, including more integrations, but requires customization and additional set up.
 +
