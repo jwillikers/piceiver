@@ -31,7 +31,7 @@ lib.mkIf (lib.elem username installFor) {
           # The wireplumber-init service ensures the volume is set correctly before playback starts.
           "wireplumber-init.service"
         ];
-        PartOf = [ "pipewire-pulse.service" ];
+        BindsTo = [ "pipewire-pulse.service" ];
         Requires = [ "wireplumber-init.service" ];
         Wants = [
           "pipewire.service"
