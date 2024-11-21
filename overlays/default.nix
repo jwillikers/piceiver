@@ -39,14 +39,19 @@
       ffmpegVariant = "headless";
     };
     # Disable GTK support and add PipeWire GStreamer plugin.
-    rygel = prev.rygel.overrideAttrs(prevAttrs: {
-      nativeBuildInputs = (prev.lib.lists.remove prev.wrapGAppsHook3 prevAttrs.nativeBuildInputs) ++ [ prev.wrapGAppsNoGuiHook ];
-      buildInputs = (prev.lib.lists.remove final.gtk3 prevAttrs.buildInputs) ++ [ prev.pipewire prev.gdk-pixbuf ];
+    rygel = prev.rygel.overrideAttrs (prevAttrs: {
+      nativeBuildInputs = (prev.lib.lists.remove prev.wrapGAppsHook3 prevAttrs.nativeBuildInputs) ++ [
+        prev.wrapGAppsNoGuiHook
+      ];
+      buildInputs = (prev.lib.lists.remove final.gtk3 prevAttrs.buildInputs) ++ [
+        prev.pipewire
+        prev.gdk-pixbuf
+      ];
       mesonFlags = prevAttrs.mesonFlags ++ [
         "-Dgtk=disabled"
         "-Dx11=disabled"
       ];
-      patches = prevAttrs.patches or [] ++ [
+      patches = prevAttrs.patches or [ ] ++ [
         (prev.fetchpatch2 {
           url = "https://gitlab.gnome.org/jwillikers/rygel/-/commit/8c7052ac7d61f190adeb1ef4251e6c7c77993872.patch";
           hash = "sha256-dfsZ0FKYBW8KzpPk/5WfX454BOscCXVkkPBuftVCRoQ=";
@@ -68,7 +73,7 @@
         withGtkPlugins = false;
       };
     };
-    gtk3 = (prev.gtk3.override {
+    gtk3 = prev.gtk3.override {
       broadwaySupport = false;
       cupsSupport = false;
       trackerSupport = false;
@@ -76,10 +81,10 @@
       # x11Support = false;
       xineramaSupport = false;
       # waylandSupport = false;
-    # }).overrideAttrs (prevAttrs: {
+      # }).overrideAttrs (prevAttrs: {
       # mesonFlags = prevAttrs.mesonFlags ++ [ "-Dwayland_backend=false" ];
-    });
-    gtk4 = (prev.gtk4.override {
+    };
+    gtk4 = prev.gtk4.override {
       broadwaySupport = false;
       cupsSupport = false;
       trackerSupport = false;
@@ -88,39 +93,140 @@
       # xineramaSupport = false;
       vulkanSupport = false;
       # waylandSupport = false;
-    # }).overrideAttrs (prevAttrs: {
+      # }).overrideAttrs (prevAttrs: {
       # mesonFlags = prevAttrs.mesonFlags ++ [ "-Dwayland-backend=false" ];
-    });
+    };
     # libepoxy = prev.libepoxy.override {
     #   x11Support = false;
     # };
+    matio = prev.matio.overrideAttrs (_prevAttrs: {
+      configureFlags = [
+        "ac_cv_va_copy=1"
+      ];
+    });
     # Add PipeWire GStreamer plugin.
     mopidy = prev.mopidy.overrideAttrs (prevAttrs: {
-        buildInputs = prevAttrs.buildInputs ++ [ prev.pipewire ];
+      buildInputs = prevAttrs.buildInputs ++ [ prev.pipewire ];
+      nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [ prev.gobject-introspection ];
+      # preFixup = ''
+      #   gappsWrapperArgs+=(
+      #     --prefix PYTHONPATH : "$out/lib/mopidy/plugins/"
+      #   )
+      # '';
     });
     nushell = prev.nushell.override {
       withDefaultFeatures = false;
     };
+    openslide = prev.openslide.overrideAttrs (_prevAttrs: {
+      depsBuildBuild = [ prev.buildPackages.stdenv.cc ];
+    });
     pipewire = prev.pipewire.override {
       # todo Add support for disabling x11Support in vulkan-loader package.
       vulkanSupport = false;
       x11Support = false;
     };
+    poppler = prev.poppler.overrideAttrs (prevAttrs: {
+      nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [ prev.glib ];
+    });
+    # NODE_OPTIONS = "--openssl-legacy-provider";
+    # nodePackages.sharp = prev.nodePackages.sharp.override (oldAttrs:{
+    # nativeBuildInputs = [
+    #   prev.pkg-config
+    # ];
+    # buildInputs = with prev; [
+    #   # required by sharp
+    #   # https://sharp.pixelplumbing.com/install
+    #   vips
+    #   final.node-gyp-build
+    #   node-pre-gyp
+    # ];
+
+    snapweb = prev.snapweb.overrideAttrs (
+      prevAttrs:
+      let
+        node-addon-api = prev.stdenvNoCC.mkDerivation rec {
+          pname = "node-addon-api";
+          version = "8.0.0";
+          src = prev.fetchFromGitHub {
+            owner = "nodejs";
+            repo = "node-addon-api";
+            rev = "v${version}";
+            hash = "sha256-k3v8lK7uaEJvcaj1sucTjFZ6+i5A6w/0Uj9rYlPhjCE=";
+          };
+          installPhase = ''
+            mkdir $out
+            cp -r *.c *.h *.gyp *.gypi index.js package-support.json package.json tools $out/
+          '';
+        };
+      in
+      {
+        makeCacheWritable = true; # sharp tries to build stuff in node_modules
+        nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [
+          prev.node-gyp
+          node-addon-api
+          prev.python3
+        ];
+        env.SHARP_FORCE_GLOBAL_LIBVIPS = "true";
+        # preBuild = ''
+        #   pushd node_modules/sharp
+
+        #   mkdir node_modules
+        #   ln -s ${node-addon-api} node_modules/node-addon-api
+
+        #   ${prev.lib.getExe prev.nodejs} install/check
+
+        #   rm -r node_modules
+
+        #   popd
+        #   rm -r node_modules/@img/sharp*
+        # '';
+        # pkgConfig.sharp = {
+        #   nativeBuildInputs = [
+        #     prev.pkg-config
+        #     prev.python3
+        #     prev.node-gyp
+        #     prev.nodePackages.semver
+        #   ];
+        #   buildInputs = [ prev.vips ];
+        #   postInstall = ''
+        #     yarn --offline run install
+        #   '';
+        # };
+        # nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [prev.node-gyp];
+        # buildInputs = prevAttrs.buildInputs ++ [prev.nodePackages.sharp];
+        # # add newer node-addon-api to build sharp
+        # # https://github.com/lovell/sharp/issues/3920
+        # dependencies = [
+        #   {
+        #     name = "node-addon-api";
+        #     packageName = "node-addon-api";
+        #     version = "7.1.0";
+        #     src = prev.fetchurl {
+        #       url = "https://registry.npmjs.org/node-addon-api/-/node-addon-api-7.1.0.tgz";
+        #       sha512 = "mNcltoe1R8o7STTegSOHdnJNN7s5EUvhoS7ShnTHDyOSd+8H+UdWODq6qSv67PjC8Zc5JRT8+oLAMCr0SIXw7g==";
+        #     };
+        #   }
+        # ];
+      }
+    );
     # Not sure how to entirely disable openconnect which is pulled in by NetworkManager.
     # So instead, just disable the GTK dependency that it indirectly pulls in.
     stoken = prev.stoken.override { withGTK3 = false; };
-    libxkbcommon = prev.libxkbcommon.overrideAttrs(prevAttrs: {
+    libxkbcommon = prev.libxkbcommon.overrideAttrs (prevAttrs: {
       nativeBuildInputs = prev.lib.lists.remove prev.xorg.xorgserver prevAttrs.nativeBuildInputs;
       buildInputs = prev.lib.lists.remove prev.xorg.libxcb prevAttrs.buildInputs;
       mesonFlags = prevAttrs.mesonFlags ++ [ "-Denable-x11=false" ];
     });
-    vips = prev.vips.overrideAttrs(prevAttrs: {
-      buildInputs = prev.lib.lists.remove prev.matio prevAttrs.buildInputs;
-    });
+    # vips = prev.vips.overrideAttrs(prevAttrs: {
+    # nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [ prev.cmake ];
+    # buildInputs = prev.lib.lists.remove prev.poppler (prev.lib.lists.remove prev.openslide (prev.lib.lists.remove prev.matio prevAttrs.buildInputs));
+    # mesonFlags = prevAttrs.mesonFlags ++ [ "-Dmatio=disabled" "-Dopenslide=disabled" "-Dpoppler=disabled" ];
+    # });
+  };
+
   # https://github.com/NixOS/nixpkgs/issues/154163
-  allow-missing-modules = final: prev: {
-    makeModulesClosure = x:
-      prev.makeModulesClosure (x // { allowMissing = true; });
+  allow-missing-modules = _final: prev: {
+    makeModulesClosure = x: prev.makeModulesClosure (x // { allowMissing = true; });
   };
 
   # Makes the unstable nixpkgs set accessible through 'pkgs.unstable'
