@@ -10,6 +10,11 @@ let
 in
 {
   nix = {
+    gc = {
+      automatic = true;
+      dates = "Mon *-*-* 03:03:00";
+      options = "--delete-older-than 30d";
+    };
     settings = {
       experimental-features = "flakes nix-command";
       # Disable global registry
