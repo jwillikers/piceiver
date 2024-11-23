@@ -169,13 +169,13 @@
         formatter = treefmtEval.config.build.wrapper;
         packages = {
           default = self.packages.${system}.piceiver-sd-image;
-          pkgs = pkgsArmCross;
           piceiver-sd-image = self.nixosConfigurations.piceiver.config.system.build.sdImage;
           piceiver-sd-image-native = self.nixosConfigurations.piceiver-native.config.system.build.sdImage;
           snappellite-sd-image = self.nixosConfigurations.snappellite.config.system.build.sdImage;
           snappellite-sd-image-native =
             self.nixosConfigurations.snappellite-native.config.system.build.sdImage;
         };
+        # pkgs = pkgsArmCross;
       }
     )
     // {
