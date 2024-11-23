@@ -108,7 +108,6 @@
     mopidy = prev.python3Packages.buildPythonApplication rec {
       pname = "mopidy";
       pyproject = true;
-      # format = "pyproject";
       version = "4.0.0a1";
 
       src = prev.fetchFromGitHub {
