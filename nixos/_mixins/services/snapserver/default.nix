@@ -14,7 +14,7 @@ lib.mkIf (role == "piceiver") {
     enable = true;
     http.docRoot = null; # pkgs.snapweb fails to cross-compile in 24.11 due to sharp / vips dependencies
     openFirewall = true;
-    sampleFormat = "48000:16:2";
+    sampleFormat = "48000:32:2";
     streams = {
       default = {
         location = "127.0.0.1:4711"; # todo Use IPv6 here when Snapcast supports it.

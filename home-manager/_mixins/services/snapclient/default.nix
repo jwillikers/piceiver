@@ -11,6 +11,7 @@ let
     [
       "--logsink system"
       "--player pulse:buffer_time=10" # Minimum is 10ms, default is 100ms
+      # "--logfilter *:debug"
     ]
     ++ lib.optionals (role == "piceiver") [
       "--host ::1"

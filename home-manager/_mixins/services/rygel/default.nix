@@ -50,7 +50,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
     [Playbin]
     enabled=true
     title=Audio playback on @PRETTY_HOSTNAME@
-    audio-sink=pipewiresink client-name=Rygel target-object=snapserver
+    audio-sink=pipewiresink client-name=Rygel target-object=snapserver stream-properties=\"props,application.id=rygel,application.name=Rygel,application.process.binary=rygel,application.version=${lib.getVersion pkgs.rygel},media.category=Playback,media.role=Music,media.type=Audio\"
 
     [GstLaunch]
     enabled=false
