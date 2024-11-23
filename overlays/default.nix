@@ -61,14 +61,37 @@
     # todo Make it possible to disable graphviz support in libcamera.
     graphviz = prev.graphviz.override { withXorg = false; };
     gst_all_1 = prev.gst_all_1 // {
-      gst-plugins-base = prev.gst_all_1.gst-plugins-base.override {
-        enableX11 = false;
-        enableWayland = false;
-      };
-      gst-plugins-good = prev.gst_all_1.gst-plugins-good.override {
-        enableX11 = false;
-        enableWayland = false;
-      };
+      gstreamer = prev.gst_all_1.gstreamer.overrideAttrs (prevAttrs: rec {
+        version = "1.24.9";
+        src = prev.fetchurl {
+          url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+          hash = "sha256-6/R7a+71CKAMhVfUwfFxPlx++bpw2sRd7tgOGCvPJg8=";
+        };
+      });
+      gst-plugins-base =
+        (prev.gst_all_1.gst-plugins-base.override {
+          enableX11 = false;
+          enableWayland = false;
+        }).overrideAttrs
+          (prevAttrs: rec {
+            version = "1.24.9";
+            src = prev.fetchurl {
+              url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+              hash = "sha256-W7O5RpB9POBN2EK2EMgRHCsGETUbJaH6Iq9e+ol4V8s=";
+            };
+          });
+      gst-plugins-good =
+        (prev.gst_all_1.gst-plugins-good.override {
+          enableX11 = false;
+          enableWayland = false;
+        }).overrideAttrs
+          (prevAttrs: rec {
+            version = "1.24.9";
+            src = prev.fetchurl {
+              url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+              hash = "sha256-iX3lC/8zfjyi+G8eqijggo2DAkFWFipQxOoK+G4peZ8=";
+            };
+          });
       gst-plugins-rs = prev.gst_all_1.gst-plugins-rs.override {
         withGtkPlugins = false;
       };
