@@ -15,6 +15,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
       mopidy-iris
       mopidy-jellyfin
     ];
+    # todo Make it easier to add Env=GST_DEBUG=3 to systemd unit...
     settings = {
       audio = {
         # I'm surprised I don't need a value larger than 1ms here.
