@@ -26,7 +26,7 @@
     home-manager = {
       # todo Use upstream when my fixes get merged for cross-compiling Mopidy with plugins.
       # url = "github:nix-community/home-manager/release-24.05";
-      url = "github:jwillikers/home-manager/mopidy-fixes";
+      url = "github:jwillikers/home-manager/mopidy-fixes-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # todo This is probably unnecessary here.
@@ -44,7 +44,7 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
@@ -95,9 +95,9 @@
       overlays = import ./overlays { inherit inputs; };
       overlaysList = with overlays; [
         additions
-        headless
-        mopidy-pipewire-gstreamer-plugin
-        rygel-pipewire-gstreamer-plugin
+        ccache
+        modifications
+        allow-missing-modules
         realtime
         unstablePackages
         unstable-shairport-sync
@@ -146,8 +146,7 @@
         # todo I should add the overlays as an output, but they must be outside eachDefaultSystem.
         # inherit overlays;
         apps = {
-          inherit (nix-update-scripts.apps.${system}) update-nix-direnv;
-          inherit (nix-update-scripts.apps.${system}) update-nixos-release;
+          inherit (nix-update-scripts.apps.${system}) update-nix-direnv update-nixos-release;
         };
         devShells.default = mkShell {
           inherit (pre-commit) shellHook;
@@ -176,6 +175,7 @@
           snappellite-sd-image-native =
             self.nixosConfigurations.snappellite-native.config.system.build.sdImage;
         };
+        # pkgs = pkgsArmCross;
       }
     )
     // {

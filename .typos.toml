@@ -9,4 +9,5 @@ extend-ignore-re = [
 # HDA = "HDA"
 
 [default.extend-words]
+ALLO = "ALLO"
 HDA = "HDA"

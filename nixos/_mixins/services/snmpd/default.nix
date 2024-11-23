@@ -11,7 +11,7 @@
     serviceConfig = {
       User = "root";
       Group = "root";
-      Restart = "always";
+      Restart = "on-failure";
       ExecStart = "${pkgs.net-snmp}/bin/snmpd -Lf /var/log/snmpd.log -f -c /etc/snmp/snmpd.conf";
     };
   };

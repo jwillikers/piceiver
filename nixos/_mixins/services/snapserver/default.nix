@@ -1,6 +1,5 @@
 {
   lib,
-  pkgs,
   role,
   ...
 }:
@@ -13,7 +12,7 @@ lib.mkIf (role == "piceiver") {
     buffer = 300; # Minimum is 20ms, default is 1000ms
     codec = "pcm";
     enable = true;
-    http.docRoot = pkgs.unstable.snapweb; # todo Remove this in 24.11 where it should be the default.
+    http.docRoot = null; # pkgs.snapweb fails to cross-compile in 24.11 due to sharp / vips dependencies
     openFirewall = true;
     sampleFormat = "48000:16:2";
     streams = {

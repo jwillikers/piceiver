@@ -23,7 +23,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
       ExecStartPre = "${pkgs.bluez}/bin/bluetoothctl discoverable on";
       ExecStart = "${pkgs.bluez-tools}/bin/bt-agent --capability=NoInputNoOutput";
       RestartSec = 5;
-      Restart = "always";
+      Restart = "on-failure";
       KillSignal = "SIGUSR1";
     };
     Install = {

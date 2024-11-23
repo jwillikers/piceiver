@@ -3,7 +3,7 @@ _: {
     programs = {
       actionlint.enable = true;
       jsonfmt.enable = true;
-      just.enable = true;
+      # just.enable = true;
       nixfmt.enable = true;
       statix.enable = true;
       taplo.enable = true;

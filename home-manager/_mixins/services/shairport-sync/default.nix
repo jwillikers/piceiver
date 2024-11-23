@@ -18,7 +18,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
       };
       Service = {
         ExecStart = "${pkgs.nqptp}/bin/nqptp -v";
-        Restart = "always";
+        Restart = "on-failure";
       };
       Install = {
         WantedBy = [ "default.target" ];
@@ -52,7 +52,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
       };
       Service = {
         ExecStart = "${pkgs.shairport-sync-airplay-2}/bin/shairport-sync";
-        Restart = "always";
+        Restart = "on-failure";
         RestartSec = 10;
       };
       Install = {
@@ -80,7 +80,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         ExecStart = "${pkgs.shairport-sync}/bin/shairport-sync --configfile=${
           osConfig.environment.etc."shairport-sync-airplay-1.conf".source
         }";
-        Restart = "always";
+        Restart = "on-failure";
         RestartSec = 10;
       };
       Install = {

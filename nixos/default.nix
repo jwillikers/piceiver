@@ -16,6 +16,7 @@
     inputs.home-manager.nixosModules.home-manager
     inputs.nix-index-database.nixosModules.nix-index
     inputs.raspberry-pi-nix.nixosModules.raspberry-pi
+    inputs.raspberry-pi-nix.nixosModules.sd-image
     # inputs.sops-nix.nixosModules.sops
     (modulesPath + "/installer/scan/not-detected.nix")
     ./_mixins/features
@@ -78,7 +79,11 @@
 
   # Otherwise, the realtime overlay doesn't take.
   # Probably because it needs to be evaluated after tho raspberry-pi-nix module.
-  nixpkgs.overlays = [ overlays.realtime ];
+  nixpkgs.overlays = [
+    overlays.allow-missing-modules
+    overlays.ccache
+    overlays.realtime
+  ];
 
   programs = {
     command-not-found.enable = false;
@@ -91,6 +96,68 @@
     nano.enable = lib.mkDefault false;
     nix-index-database.comma.enable = true;
   };
+
+  security = {
+    sudo.enable = false;
+    sudo-rs = {
+      enable = true;
+      execWheelOnly = true;
+      # extraConfig = ''
+      #   %wheel \${config.hostname} = NOPASSWD: /usr/bin/poweroff , /usr/bin/systemctl poweroff , /usr/bin/reboot , /usr/bin/systemctl reboot , /usr/bin/systemctl suspend
+      #   \${username} \${config.hostname} = NOPASSWD: /usr/bin/sudo -H -u core fish -c 'cd; fish'
+      # '';
+      extraRules = [
+        {
+          commands = [
+            {
+              command = "${pkgs.systemd}/bin/systemctl poweroff";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "${pkgs.systemd}/bin/systemctl reboot";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "${pkgs.systemd}/bin/systemctl suspend";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "${pkgs.systemd}/bin/poweroff";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "${pkgs.systemd}/bin/reboot";
+              options = [ "NOPASSWD" ];
+            }
+          ];
+          # host = "ALL";
+          # host = config.networking.fqdn;
+          users = [ username ];
+          # }
+          # {
+          #   commands = [
+          #     # todo Test if this works.
+          #     # Need EXEC option?
+          #     # sudo -H -u core fish -c 'cd; fish'
+          #     {
+          #       command = "${pkgs.lib.getExe pkgs.fish} -c 'cd; fish'";
+          #       options = [ "NOPASSWD" "SETENV" ];
+          #     }
+          #     {
+          #       command = "${pkgs.lib.getExe pkgs.fish}";
+          #       options = [ "NOPASSWD" "SETENV" ];
+          #     }
+          #   ];
+          #   # host = config.networking.fqdn;
+          #   # host = "ALL";
+          #   # runAs = "core:core";
+          #   runAs = "core";
+          #   users = [username];
+        }
+      ];
+    };
+  };
+
   # services = {
   # todo Fix
   #  > Did not find CMake 'cmake'
