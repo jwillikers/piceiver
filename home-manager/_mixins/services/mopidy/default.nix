@@ -22,7 +22,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         buffer_time = 1; # Must be greater than 0, default from GStreamer is 1000ms
         mixer = "software";
         mixer_volume = 50;
-        output = "pipewiresink client-name=Mopidy target-object=snapserver";
+        output = "audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2,format=S32LE ! pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio\"";
       };
       http = {
         enabled = true;
