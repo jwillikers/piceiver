@@ -104,16 +104,70 @@
         "ac_cv_va_copy=1"
       ];
     });
-    # Add PipeWire GStreamer plugin.
-    mopidy = prev.mopidy.overrideAttrs (prevAttrs: {
-      buildInputs = prevAttrs.buildInputs ++ [ prev.pipewire ];
-      nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [ prev.gobject-introspection ];
-      # preFixup = ''
-      #   gappsWrapperArgs+=(
-      #     --prefix PYTHONPATH : "$out/lib/mopidy/plugins/"
-      #   )
-      # '';
-    });
+    # Use a newer version and add PipeWire GStreamer plugin.
+    mopidy = prev.python3Packages.buildPythonApplication rec {
+      pname = "mopidy";
+      pyproject = true;
+      # format = "pyproject";
+      version = "4.0.0a1";
+
+      src = prev.fetchFromGitHub {
+        owner = "mopidy";
+        repo = "mopidy";
+        rev = "refs/tags/v${version}";
+        hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
+      };
+
+      build-system = with prev.python3Packages; [
+        setuptools
+        setuptools-scm
+      ];
+
+      nativeBuildInputs = [ prev.wrapGAppsNoGuiHook ];
+
+      propagatedNativeBuildInputs = [
+        prev.gobject-introspection
+      ];
+
+      propagatedBuildInputs = [
+        prev.gobject-introspection
+      ];
+
+      buildInputs =
+        with final.gst_all_1;
+        [
+          gst-plugins-bad
+          gst-plugins-base
+          gst-plugins-good
+          gst-plugins-ugly
+          gst-plugins-rs
+        ]
+        ++ [
+          prev.glib-networking
+          prev.pipewire
+        ];
+
+      dependencies = with prev.python3Packages; [
+        gst-python
+        pygobject3
+        pykka
+        requests
+        setuptools
+        tornado
+      ];
+
+      # There are no tests
+      doCheck = false;
+
+      meta = {
+        homepage = "https://www.mopidy.com/";
+        description = "Extensible music server that plays music from local disk, Spotify, SoundCloud, and more";
+        mainProgram = "mopidy";
+        license = with prev.lib.licenses; [ asl20 ];
+        maintainers = with prev.lib.maintainers; [ fpletz ];
+        hydraPlatforms = [ ];
+      };
+    };
     nushell = prev.nushell.override {
       withDefaultFeatures = false;
     };
