@@ -1,0 +1,25 @@
+From 1c42b4fc92f2a20dd98cbb2fc297a935e64c2ec4 Mon Sep 17 00:00:00 2001
+From: Jordan Williams <jordan@jwillikers.com>
+Date: Sat, 23 Nov 2024 14:14:54 -0600
+Subject: [PATCH 1/2] Use playbin3
+
+---
+ src/mopidy/audio/actor.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/mopidy/audio/actor.py b/src/mopidy/audio/actor.py
+index 84062f6b..444239bd 100644
+--- a/src/mopidy/audio/actor.py
++++ b/src/mopidy/audio/actor.py
+@@ -432,7 +432,7 @@ class Audio(pykka.ThreadingActor):
+             jacksink.set_rank(Gst.Rank.SECONDARY)
+ 
+     def _setup_playbin(self) -> None:
+-        playbin = Gst.ElementFactory.make("playbin")
++        playbin = Gst.ElementFactory.make("playbin3")
+         if playbin is None:
+             raise exceptions.AudioException("Failed to create GStreamer playbin.")
+         playbin.set_property("flags", _GST_PLAY_FLAGS_AUDIO)
+-- 
+2.47.0
+

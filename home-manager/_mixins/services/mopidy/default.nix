@@ -18,15 +18,12 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
     # todo Make it easier to add Env=GST_DEBUG=3 to systemd unit...
     settings = {
       audio = {
-        # I'm surprised I don't need a value larger than 1ms here.
-        buffer_time = 1; # Must be greater than 0, default from GStreamer is 1000ms
+        # If you set this too low, Mopidy will get hopelessly lost when switching between tracks and become unresponsive.
+        # The lowest I could get this without causing Mopidy to crash was 35ms.
+        buffer_time = 35; # Must be greater than 0, default from GStreamer is 1000ms
         mixer = "software";
         mixer_volume = 50;
-        # Mopidy gets all out of whack when switching between tracks using the default 44100 sample rate or possibly the S16LE format.
-        # I don't know why, but updating it to 48000 seems to make everything just work.
-        # Rygel uses GStreamer similarly but doesn't have problems like this, even though it uses a sample rate of 96000...
-        # Maybe it's something that is a problem in the pre-release version of Mopidy.
-        output = "audioconvert ! audioresample quality=10 ! audio/x-raw,rate=48000,channels=2,format=S32LE ! pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio\"";
+        output = "pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio\"";
       };
       http = {
         enabled = true;
