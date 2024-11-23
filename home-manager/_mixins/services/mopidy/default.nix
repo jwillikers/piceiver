@@ -22,7 +22,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         buffer_time = 1; # Must be greater than 0, default from GStreamer is 1000ms
         mixer = "software";
         mixer_volume = 50;
-        # Mopidy gets all out of whack when switching between tracks using the default 44100 sample rate.
+        # Mopidy gets all out of whack when switching between tracks using the default 44100 sample rate or possibly the S16LE format.
         # I don't know why, but updating it to 48000 seems to make everything just work.
         # Rygel uses GStreamer similarly but doesn't have problems like this, even though it uses a sample rate of 96000...
         # Maybe it's something that is a problem in the pre-release version of Mopidy.
@@ -51,9 +51,9 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         albumartistsort = false; # (Optional: will default to True if left undefined)
         album_format = "{ProductionYear} - {Name}"; # (Optional: will default to "{Name}" if left undefined)
       };
-      logging = {
-        verbosity = 2;
-      };
+      # logging = {
+      #   verbosity = 2;
+      # };
     };
   };
 }
