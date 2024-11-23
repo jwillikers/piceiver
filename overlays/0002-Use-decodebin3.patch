@@ -1,0 +1,25 @@
+From ae424ab984f9bf98ff9be9937ceac345b80db729 Mon Sep 17 00:00:00 2001
+From: Jordan Williams <jordan@jwillikers.com>
+Date: Sat, 23 Nov 2024 14:54:23 -0600
+Subject: [PATCH 2/2] Use decodebin3
+
+---
+ src/mopidy/audio/scan.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/mopidy/audio/scan.py b/src/mopidy/audio/scan.py
+index d38cc895..e387dc1d 100644
+--- a/src/mopidy/audio/scan.py
++++ b/src/mopidy/audio/scan.py
+@@ -130,7 +130,7 @@ def _setup_decodebin(element, pad, pipeline, signals):
+     if typefind is None:
+         raise exceptions.AudioException("Failed to create GStreamer typefind element.")
+ 
+-    decodebin = Gst.ElementFactory.make("decodebin")
++    decodebin = Gst.ElementFactory.make("decodebin3")
+     if decodebin is None:
+         raise exceptions.AudioException("Failed to create GStreamer decodebin element.")
+ 
+-- 
+2.47.0
+

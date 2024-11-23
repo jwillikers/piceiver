@@ -117,6 +117,11 @@
         hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
       };
 
+      patches = [
+        ./0001-Use-playbin3.patch
+        ./0002-Use-decodebin3.patch
+      ];
+
       build-system = with prev.python3Packages; [
         setuptools
         setuptools-scm
