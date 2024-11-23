@@ -26,7 +26,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         # I don't know why, but updating it to 48000 seems to make everything just work.
         # Rygel uses GStreamer similarly but doesn't have problems like this, even though it uses a sample rate of 96000...
         # Maybe it's something that is a problem in the pre-release version of Mopidy.
-        output = "audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2,format=S32LE ! pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio\"";
+        output = "audioconvert ! audioresample quality=10 ! audio/x-raw,rate=48000,channels=2,format=S32LE ! pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio\"";
       };
       http = {
         enabled = true;
