@@ -46,6 +46,9 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         albumartistsort = false; # (Optional: will default to True if left undefined)
         album_format = "{ProductionYear} - {Name}"; # (Optional: will default to "{Name}" if left undefined)
       };
+      logging = {
+        verbosity = 2;
+      };
     };
   };
 }
