@@ -13,7 +13,7 @@ trim_trailing_whitespace = true
 indent_size = unset
 indent_style = unset
 
-[*.{adoc,envrc,nix,nu,yaml,yml}]
+[*.{adoc,envrc,lock,nix,nu,yaml,yml}]
 max_line_length = off
 
 [{justfile,.justfile,*.just}]
