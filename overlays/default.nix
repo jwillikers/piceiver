@@ -148,72 +148,75 @@
         "ac_cv_va_copy=1"
       ];
     });
-    # Use a newer version and add PipeWire GStreamer plugin.
-    mopidy = prev.python3Packages.buildPythonApplication rec {
-      pname = "mopidy";
-      pyproject = true;
-      version = "4.0.0a1";
+    # todo Fix this so that it actually gets used as part of the service...
+    mopidyPackages = prev.mopidyPackages // {
+      # Use a newer version and add PipeWire GStreamer plugin.
+      mopidy = prev.python3Packages.buildPythonApplication rec {
+        pname = "mopidy";
+        pyproject = true;
+        version = "4.0.0a1";
 
-      src = prev.fetchFromGitHub {
-        owner = "mopidy";
-        repo = "mopidy";
-        rev = "refs/tags/v${version}";
-        hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
-      };
+        src = prev.fetchFromGitHub {
+          owner = "mopidy";
+          repo = "mopidy";
+          rev = "refs/tags/v${version}";
+          hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
+        };
 
-      patches = [
-        ./0001-Use-playbin3.patch
-        ./0002-Use-decodebin3.patch
-      ];
-
-      build-system = with prev.python3Packages; [
-        setuptools
-        setuptools-scm
-      ];
-
-      nativeBuildInputs = [ prev.wrapGAppsNoGuiHook ];
-
-      propagatedNativeBuildInputs = [
-        prev.gobject-introspection
-      ];
-
-      propagatedBuildInputs = [
-        prev.gobject-introspection
-      ];
-
-      buildInputs =
-        with final.gst_all_1;
-        [
-          gst-plugins-bad
-          gst-plugins-base
-          gst-plugins-good
-          gst-plugins-ugly
-          gst-plugins-rs
-        ]
-        ++ [
-          prev.glib-networking
-          prev.pipewire
+        patches = [
+          ./0001-Use-playbin3.patch
+          ./0002-Use-decodebin3.patch
         ];
 
-      dependencies = with final.python3Packages; [
-        gst-python
-        pygobject3
-        pykka
-        requests
-        setuptools
-        tornado
-      ];
+        build-system = with prev.python3Packages; [
+          setuptools
+          setuptools-scm
+        ];
 
-      # There are no tests
-      doCheck = false;
+        nativeBuildInputs = [ prev.wrapGAppsNoGuiHook ];
 
-      meta = {
-        homepage = "https://www.mopidy.com/";
-        description = "Extensible music server that plays music from local disk, Spotify, SoundCloud, and more";
-        mainProgram = "mopidy";
-        license = with prev.lib.licenses; [ asl20 ];
-        maintainers = with prev.lib.maintainers; [ fpletz ];
-        hydraPlatforms = [ ];
+        propagatedNativeBuildInputs = [
+          prev.gobject-introspection
+        ];
+
+        propagatedBuildInputs = [
+          prev.gobject-introspection
+        ];
+
+        buildInputs =
+          with final.gst_all_1;
+          [
+            gst-plugins-bad
+            gst-plugins-base
+            gst-plugins-good
+            gst-plugins-ugly
+            gst-plugins-rs
+          ]
+          ++ [
+            prev.glib-networking
+            prev.pipewire
+          ];
+
+        dependencies = with prev.python3Packages; [
+          gst-python
+          pygobject3
+          pykka
+          requests
+          setuptools
+          tornado
+        ];
+
+        # There are no tests
+        doCheck = false;
+
+        meta = {
+          homepage = "https://www.mopidy.com/";
+          description = "Extensible music server that plays music from local disk, Spotify, SoundCloud, and more";
+          mainProgram = "mopidy";
+          license = with prev.lib.licenses; [ asl20 ];
+          maintainers = with prev.lib.maintainers; [ fpletz ];
+          hydraPlatforms = [ ];
+        };
       };
     };
     nushell = prev.nushell.override {
