@@ -61,40 +61,61 @@
     # todo Make it possible to disable graphviz support in libcamera.
     graphviz = prev.graphviz.override { withXorg = false; };
     gst_all_1 = prev.gst_all_1 // {
-      gstreamer = prev.gst_all_1.gstreamer.overrideAttrs (prevAttrs: rec {
-        version = "1.24.9";
-        src = prev.fetchurl {
-          url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-          hash = "sha256-6/R7a+71CKAMhVfUwfFxPlx++bpw2sRd7tgOGCvPJg8=";
-        };
-      });
-      gst-plugins-base =
-        (prev.gst_all_1.gst-plugins-base.override {
-          enableX11 = false;
-          enableWayland = false;
-        }).overrideAttrs
-          (prevAttrs: rec {
-            version = "1.24.9";
-            src = prev.fetchurl {
-              url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-              hash = "sha256-W7O5RpB9POBN2EK2EMgRHCsGETUbJaH6Iq9e+ol4V8s=";
-            };
-          });
-      gst-plugins-good =
-        (prev.gst_all_1.gst-plugins-good.override {
-          enableX11 = false;
-          enableWayland = false;
-        }).overrideAttrs
-          (prevAttrs: rec {
-            version = "1.24.9";
-            src = prev.fetchurl {
-              url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-              hash = "sha256-iX3lC/8zfjyi+G8eqijggo2DAkFWFipQxOoK+G4peZ8=";
-            };
-          });
+      # gstreamer = prev.gst_all_1.gstreamer.overrideAttrs (prevAttrs: rec {
+      #   version = "1.24.9";
+      #   src = prev.fetchurl {
+      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+      #     hash = "sha256-6/R7a+71CKAMhVfUwfFxPlx++bpw2sRd7tgOGCvPJg8=";
+      #   };
+      # });
+      # gst-plugins-bad = prev.gst_all_1.gst-plugins-bad.overrideAttrs (prevAttrs: rec {
+      #   version = "1.24.9";
+      #   src = prev.fetchurl {
+      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+      #     hash = "sha256-Nvz3qa8KdTtDuwO5g1JG901y9xJDaeZqHi3HsE9aXKs=";
+      #   };
+      # });
+      gst-plugins-base = prev.gst_all_1.gst-plugins-base.override {
+        enableX11 = false;
+        enableWayland = false;
+      };
+      # }).overrideAttrs
+      #   (prevAttrs: rec {
+      #     # version = "1.24.9";
+      #     # src = prev.fetchurl {
+      #     #   url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+      #     #   hash = "sha256-W7O5RpB9POBN2EK2EMgRHCsGETUbJaH6Iq9e+ol4V8s=";
+      #     # };
+      #   });
+      gst-plugins-good = prev.gst_all_1.gst-plugins-good.override {
+        enableX11 = false;
+        enableWayland = false;
+      };
+      # }).overrideAttrs
+      #   (prevAttrs: rec {
+      #     version = "1.24.9";
+      #     src = prev.fetchurl {
+      #       url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+      #       hash = "sha256-iX3lC/8zfjyi+G8eqijggo2DAkFWFipQxOoK+G4peZ8=";
+      #     };
+      #   });
+      # gst-libva = prev.gst_all_1.gst-libva.overrideAttrs (prevAttrs: rec {
+      #   version = "1.24.9";
+      #   src = prev.fetchurl {
+      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+      #     hash = "sha256-MmgumuUI7gH0+xNLOlIAgeKsAHIgmXV3YksdFhcdRWw=";
+      #   };
+      # });
       gst-plugins-rs = prev.gst_all_1.gst-plugins-rs.override {
         withGtkPlugins = false;
       };
+      # gst-plugins-ugly = prev.gst_all_1.gst-plugins-ugly.overrideAttrs (prevAttrs: rec {
+      #   version = "1.24.9";
+      #   src = prev.fetchurl {
+      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
+      #     hash = "sha256-S2swEQ84zQXrZ0IilxQrdaVf4AADEF9IsTYD5nYcw7Y=";
+      #   };
+      # });
     };
     gtk3 = prev.gtk3.override {
       broadwaySupport = false;
@@ -127,72 +148,75 @@
         "ac_cv_va_copy=1"
       ];
     });
-    # Use a newer version and add PipeWire GStreamer plugin.
-    mopidy = prev.python3Packages.buildPythonApplication rec {
-      pname = "mopidy";
-      pyproject = true;
-      version = "4.0.0a1";
+    # todo Fix this so that it actually gets used as part of the service...
+    mopidyPackages = prev.mopidyPackages // {
+      # Use a newer version and add PipeWire GStreamer plugin.
+      mopidy = prev.python3Packages.buildPythonApplication rec {
+        pname = "mopidy";
+        pyproject = true;
+        version = "4.0.0a1";
 
-      src = prev.fetchFromGitHub {
-        owner = "mopidy";
-        repo = "mopidy";
-        rev = "refs/tags/v${version}";
-        hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
-      };
+        src = prev.fetchFromGitHub {
+          owner = "mopidy";
+          repo = "mopidy";
+          rev = "refs/tags/v${version}";
+          hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
+        };
 
-      patches = [
-        ./0001-Use-playbin3.patch
-        ./0002-Use-decodebin3.patch
-      ];
-
-      build-system = with prev.python3Packages; [
-        setuptools
-        setuptools-scm
-      ];
-
-      nativeBuildInputs = [ prev.wrapGAppsNoGuiHook ];
-
-      propagatedNativeBuildInputs = [
-        prev.gobject-introspection
-      ];
-
-      propagatedBuildInputs = [
-        prev.gobject-introspection
-      ];
-
-      buildInputs =
-        with final.gst_all_1;
-        [
-          gst-plugins-bad
-          gst-plugins-base
-          gst-plugins-good
-          gst-plugins-ugly
-          gst-plugins-rs
-        ]
-        ++ [
-          prev.glib-networking
-          prev.pipewire
+        patches = [
+          ./0001-Use-playbin3.patch
+          ./0002-Use-decodebin3.patch
         ];
 
-      dependencies = with prev.python3Packages; [
-        gst-python
-        pygobject3
-        pykka
-        requests
-        setuptools
-        tornado
-      ];
+        build-system = with prev.python3Packages; [
+          setuptools
+          setuptools-scm
+        ];
 
-      # There are no tests
-      doCheck = false;
+        nativeBuildInputs = [ prev.wrapGAppsNoGuiHook ];
 
-      meta = {
-        homepage = "https://www.mopidy.com/";
-        description = "Extensible music server that plays music from local disk, Spotify, SoundCloud, and more";
-        mainProgram = "mopidy";
-        license = with prev.lib.licenses; [ asl20 ];
-        maintainers = with prev.lib.maintainers; [ fpletz ];
-        hydraPlatforms = [ ];
+        propagatedNativeBuildInputs = [
+          prev.gobject-introspection
+        ];
+
+        propagatedBuildInputs = [
+          prev.gobject-introspection
+        ];
+
+        buildInputs =
+          with final.gst_all_1;
+          [
+            gst-plugins-bad
+            gst-plugins-base
+            gst-plugins-good
+            gst-plugins-ugly
+            gst-plugins-rs
+          ]
+          ++ [
+            prev.glib-networking
+            prev.pipewire
+          ];
+
+        dependencies = with prev.python3Packages; [
+          gst-python
+          pygobject3
+          pykka
+          requests
+          setuptools
+          tornado
+        ];
+
+        # There are no tests
+        doCheck = false;
+
+        meta = {
+          homepage = "https://www.mopidy.com/";
+          description = "Extensible music server that plays music from local disk, Spotify, SoundCloud, and more";
+          mainProgram = "mopidy";
+          license = with prev.lib.licenses; [ asl20 ];
+          maintainers = with prev.lib.maintainers; [ fpletz ];
+          hydraPlatforms = [ ];
+        };
       };
     };
     nushell = prev.nushell.override {

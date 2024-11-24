@@ -12,6 +12,9 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
   services.mopidy = {
     enable = true;
     extensionPackages = with pkgs; [
+      # Trick the NixOS module into using my overlay for Mopidy.
+      # Ha.
+      mopidy
       mopidy-iris
       mopidy-jellyfin
     ];
@@ -20,10 +23,14 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
       audio = {
         # If you set this too low, Mopidy will get hopelessly lost when switching between tracks and become unresponsive.
         # The lowest I could get this without causing Mopidy to crash was 35ms.
-        buffer_time = 35; # Must be greater than 0, default from GStreamer is 1000ms
+        # Now lowest is 50ms for some reason...
+        buffer_time = 50; # Must be greater than 0, default from GStreamer is 1000ms
         mixer = "software";
         mixer_volume = 50;
-        output = "pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio\"";
+        output = "pipewiresink client-name=Mopidy target-object=snapserver stream-properties=\"props,application.id=mopidy,application.name=Mopidy,application.process.binary=mopidy,application.version=${lib.getVersion pkgs.mopidy},media.category=Playback,media.role=Music,media.type=Audio,session.suspend-timeout-seconds=0\"";
+      };
+      file = {
+        enabled = false;
       };
       http = {
         enabled = true;
@@ -40,7 +47,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         hostname = "jellyfin.lan.jwillikers.io";
         username = "jordan";
         # todo Use sops for password.
-        password = "your password here";
+        password = "I0DpLg45FF^t5N";
         libraries = [
           "Books"
           "Music"
