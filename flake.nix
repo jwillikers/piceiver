@@ -29,6 +29,10 @@
       url = "github:jwillikers/home-manager/mopidy-fixes-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    lix-module = {
+      url = "git+https://git.lix.systems/lix-project/nixos-module.git?ref=release-2.91";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # todo This is probably unnecessary here.
     # But it should make it easier
     nix-index-database = {

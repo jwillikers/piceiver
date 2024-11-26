@@ -14,6 +14,7 @@
     # Use modules from other flakes
     # inputs.disko.nixosModules.disko
     inputs.home-manager.nixosModules.home-manager
+    inputs.lix-module.nixosModules.default
     inputs.nix-index-database.nixosModules.nix-index
     inputs.raspberry-pi-nix.nixosModules.raspberry-pi
     inputs.raspberry-pi-nix.nixosModules.sd-image
