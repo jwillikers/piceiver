@@ -51,7 +51,7 @@ lib.mkIf (lib.elem username installFor && role == "piceiver") {
         X-Restart-Triggers = [ "${osConfig.environment.etc."shairport-sync.conf".source}" ];
       };
       Service = {
-        ExecStart = "${pkgs.shairport-sync-airplay-2}/bin/shairport-sync";
+        ExecStart = "${pkgs.shairport-sync-airplay2}/bin/shairport-sync";
         Restart = "on-failure";
         RestartSec = 10;
       };

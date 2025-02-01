@@ -355,7 +355,7 @@
 
   # Add a separate package for shairport-sync with AirPlay 2 support enabled.
   shairport-sync-airplay2 = _final: prev: {
-    shairport-sync-airplay-2 = prev.shairport-sync.override { enableAirplay2 = true; };
+    shairport-sync-airplay2 = prev.shairport-sync.override { enableAirplay2 = true; };
   };
 
   realtime =
