@@ -25,7 +25,7 @@
     # todo Look into musnix: https://github.com/musnix/musnix
     home-manager = {
       # todo Use upstream when my fixes get merged for cross-compiling Mopidy with plugins.
-      # url = "github:nix-community/home-manager/release-24.05";
+      # url = "github:nix-community/home-manager/release-25.05";
       url = "github:jwillikers/home-manager/mopidy-fixes-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -48,7 +48,7 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
@@ -285,3 +285,4 @@
       };
     };
 }
+
