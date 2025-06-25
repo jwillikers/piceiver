@@ -79,6 +79,8 @@ This is 4 17mm M2.5 Hex socket-socket standoffs and 8 6mm M2.5 screws.
 * https://shop.pimoroni.com/products/booster-header?variant=47414520906[Booster Header] $2.22
 This header has a standard 8.5mm height with 5mm tall pins.
 * Bluetooth USB Adapter such as this https://www.amazon.com/gp/product/B09DMP6T22/ref=ox_sc_act_title_1?smid=ATVPDKIKX0DER&psc=1[TP-Link USB Bluetooth Adapter] $15.
+Turns out this Bluetooth adapter doesn't work so well.
+Maybe it will work when I update things?
 
 The total price comes to a whopping _$249.02_.
 That's still a bit pricey, so I'd love to get the cost down to below $200 at the very least.
