@@ -246,9 +246,7 @@
         "flake-utils": [
           "flake-utils"
         ],
-        "nixpkgs": [
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs",
         "pre-commit-hooks": [
           "pre-commit-hooks"
         ],
@@ -257,11 +255,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1732024592,
-        "narHash": "sha256-PdKTsenC0fKBDjG+oKyH5tKK0AcSznpQgI2jCkYkelc=",
+        "lastModified": 1752679375,
+        "narHash": "sha256-Lkm0PnL2/+sYgwTnWmzk0np6XhVvJ1UlcSrfsGGjj4A=",
         "owner": "jwillikers",
         "repo": "nix-update-scripts",
-        "rev": "a5469018108ca16fac1ba9588f54ca403e7e4f53",
+        "rev": "6868304ff8ab9e1524714287e218d500f1c20b62",
         "type": "github"
       },
       "original": {
@@ -272,16 +270,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1732981179,
-        "narHash": "sha256-F7thesZPvAMSwjRu0K8uFshTk3ZZSNAsXTIFvXBT+34=",
+        "lastModified": 1751211869,
+        "narHash": "sha256-1Cu92i1KSPbhPCKxoiVG5qnoRiKTgR5CcGSRyLpOd7Y=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "62c435d93bf046a5396f3016472e8f7c8e2aed65",
+        "rev": "b43c397f6c213918d6cfe6e3550abfe79b5d1c51",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-24.11",
+        "ref": "nixos-25.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -298,6 +296,22 @@
       "original": {
         "owner": "NixOS",
         "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1732981179,
+        "narHash": "sha256-F7thesZPvAMSwjRu0K8uFshTk3ZZSNAsXTIFvXBT+34=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "62c435d93bf046a5396f3016472e8f7c8e2aed65",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-24.11",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -364,7 +378,7 @@
         "lix-module": "lix-module",
         "nix-index-database": "nix-index-database",
         "nix-update-scripts": "nix-update-scripts",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": "nixpkgs_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "pre-commit-hooks": "pre-commit-hooks",
         "raspberry-pi-nix": "raspberry-pi-nix",

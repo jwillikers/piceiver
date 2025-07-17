@@ -43,7 +43,7 @@
       url = "github:jwillikers/nix-update-scripts";
       inputs = {
         flake-utils.follows = "flake-utils";
-        nixpkgs.follows = "nixpkgs";
+        # nixpkgs.follows = "nixpkgs";
         pre-commit-hooks.follows = "pre-commit-hooks";
         treefmt-nix.follows = "treefmt-nix";
       };
