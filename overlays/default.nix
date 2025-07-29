@@ -9,6 +9,10 @@
         # Increase the maximum size of the cache.
         export CCACHE_MAXSIZE=75Gi
 
+        # For Linux kernel
+        export CCACHE_SLOPPINESS=random_seed
+        export KBUILD_BUILD_TIMESTAMP=""
+
         # This path must be configured fox Nix and NixOS as an extra sandbox path.
         export CCACHE_DIR="/nix/var/cache/ccache"
         export CCACHE_UMASK=007

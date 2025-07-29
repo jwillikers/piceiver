@@ -30,7 +30,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     lix-module = {
-      url = "git+https://git.lix.systems/lix-project/nixos-module.git?ref=release-2.91";
+      url = "git+https://git.lix.systems/lix-project/nixos-module.git";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # todo This is probably unnecessary here.
