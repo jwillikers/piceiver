@@ -1,9 +1,8 @@
-_: {
+{ lib, useSecrets, ... }:
+{
   users.users.jordan = {
     description = "Jordan Williams";
-    initialPassword = "opW6&Aa";
-    # todo Use sops-nix for password.
-    # mkpasswd -m sha-512
-    # hashedPassword = "";
+    # With secrets, the password is set from the nix-secrets repository in nixos/_mixins/features/sops.
+    initialPassword = lib.mkIf (!useSecrets) "opW6&Aa";
   };
 }

@@ -56,17 +56,16 @@
       url = "github:nvmd/nixos-raspberrypi/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # todo Use sops-nix for secret management.
-    # The user login password, Jellyfin server credentials, and Net-SNMP accounts all need to be stored as secrets.
-    # https://unmovedcentre.com/posts/secrets-management/
-    # secrets = {
-    #   url = "git+ssh://git@codeberg.org/jwillikers/nix-secrets.git?shallow=1";
-    #   flake = false;
-    # };
-    # sops-nix = {
-    #   url = "github:Mic92/sops-nix";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
+    # Private repository of secrets encrypted with sops.
+    # Only the configurations with secrets use it, so the basic configurations build without access to it.
+    nix-secrets = {
+      url = "git+ssh://git@forgejo.jwillikers.io/jwillikers/nix-secrets.git?shallow=1";
+      flake = false;
+    };
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # todo Should I use nixos-hardware?
     # nixos-hardware.url = "github:nixos/nixos-hardware";
     treefmt-nix = {
@@ -85,8 +84,6 @@
       nixos-raspberrypi,
       nixpkgs,
       pre-commit-hooks,
-      # secrets,
-      # sops-nix,
       treefmt-nix,
       ...
     }@inputs:
@@ -108,11 +105,14 @@
         {
           config,
           cross ? false,
+          # Use secrets from the private nix-secrets repository.
+          secrets ? false,
         }:
         nixos-raspberrypi.lib.nixosSystem {
           inherit nixpkgs;
           specialArgs = {
             inherit inputs overlays stateVersion;
+            useSecrets = secrets;
             inherit (config)
               audioHAT
               hostname
@@ -191,8 +191,12 @@
               asciidoctor
               pkgs.deploy-rs
               fish
+              jq
               just
               lychee
+              mkpasswd
+              sops
+              ssh-to-age
               zstd
               treefmtEval.config.build.wrapper
             ]
@@ -202,7 +206,11 @@
         };
         formatter = treefmtEval.config.build.wrapper;
         packages = {
-          default = self.packages.${system}.piceiver-sd-image;
+          # The basic image builds without access to the private nix-secrets repository.
+          default = self.packages.${system}.piceiver-basic-sd-image;
+          piceiver-basic-sd-image = self.nixosConfigurations.piceiver-basic.config.system.build.sdImage;
+          piceiver-basic-sd-image-native =
+            self.nixosConfigurations.piceiver-basic-native.config.system.build.sdImage;
           piceiver-sd-image = self.nixosConfigurations.piceiver.config.system.build.sdImage;
           piceiver-sd-image-native = self.nixosConfigurations.piceiver-native.config.system.build.sdImage;
           snappellite-sd-image = self.nixosConfigurations.snappellite.config.system.build.sdImage;
@@ -223,13 +231,30 @@
               path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.piceiver;
             };
           };
+          # The basic configuration has no SSH keys for root.
+          # Connect as the regular user and prompt for its sudo password instead.
+          piceiver-basic = {
+            hostname = "piceiver.local";
+            interactiveSudo = true;
+            sshUser = "jordan";
+            profiles.system = {
+              path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.piceiver-basic;
+              user = "root";
+            };
+          };
           # piceiver-native = {
           #   hostname = "piceiver.local";
           #   profiles.system.path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.piceiver-native;
           # };
+          # The Snappellite doesn't use secrets yet, so it has no SSH keys for root either.
           snappellite = {
             hostname = "snappellite.local";
-            profiles.system.path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.snappellite;
+            interactiveSudo = true;
+            sshUser = "jordan";
+            profiles.system = {
+              path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.snappellite;
+              user = "root";
+            };
           };
           # snappellite-native = {
           #   hostname = "snappellite.local";
@@ -237,13 +262,30 @@
           # };
         };
         sshUser = "root";
+        # Root may only log in from the local network.
+        # piceiver.local can resolve to a global IPv6 address, so connect over IPv4.
+        sshOpts = [
+          "-o"
+          "AddressFamily=inet"
+        ];
       };
       nixosConfigurations = {
+        # These use secrets from the private nix-secrets repository.
         piceiver = mkRaspberryPiSystem {
           config = piceiverRaspberryPi5Config;
           cross = true;
+          secrets = true;
         };
-        piceiver-native = mkRaspberryPiSystem { config = piceiverRaspberryPi5Config; };
+        piceiver-native = mkRaspberryPiSystem {
+          config = piceiverRaspberryPi5Config;
+          secrets = true;
+        };
+        # These don't use any secrets and have default passwords.
+        piceiver-basic = mkRaspberryPiSystem {
+          config = piceiverRaspberryPi5Config;
+          cross = true;
+        };
+        piceiver-basic-native = mkRaspberryPiSystem { config = piceiverRaspberryPi5Config; };
         snappellite = mkRaspberryPiSystem {
           config = snappelliteRaspberryPi4Config;
           cross = true;

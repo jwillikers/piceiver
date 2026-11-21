@@ -7,7 +7,11 @@
   ...
 }:
 let
-  flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+  # Skip the private nix-secrets repository by name before checking its type.
+  # Checking its type would fetch it, which isn't possible without access to it, i.e. for the basic configurations.
+  flakeInputs = lib.filterAttrs (
+    name: input: name != "nix-secrets" && lib.isType "flake" input
+  ) inputs;
 in
 {
   nix = {

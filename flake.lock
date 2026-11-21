@@ -146,6 +146,23 @@
         "type": "github"
       }
     },
+    "nix-secrets": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795288511,
+        "narHash": "sha256-EA+IgsPNGvnMcKaUuwZ8U7VHKu5sMGAeNV2QuKlr9gM=",
+        "ref": "refs/heads/main",
+        "rev": "51ff14131581b89ec97c99b7fd8c86e6414f7959",
+        "shallow": true,
+        "type": "git",
+        "url": "ssh://git@forgejo.jwillikers.io/jwillikers/nix-secrets.git"
+      },
+      "original": {
+        "shallow": true,
+        "type": "git",
+        "url": "ssh://git@forgejo.jwillikers.io/jwillikers/nix-secrets.git"
+      }
+    },
     "nix-update-scripts": {
       "inputs": {
         "flake-utils": [
@@ -284,12 +301,34 @@
         "flake-utils": "flake-utils",
         "home-manager": "home-manager",
         "nix-index-database": "nix-index-database",
+        "nix-secrets": "nix-secrets",
         "nix-update-scripts": "nix-update-scripts",
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "pre-commit-hooks": "pre-commit-hooks",
+        "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix"
+      }
+    },
+    "sops-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794866654,
+        "narHash": "sha256-Y28AMB8lyKjASdJ0BVsR2AqR1cUsVuo8RVVpzHoECho=",
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "rev": "7c637afdccdf9bcf35c4a2d67b58a77c1fd843a4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "type": "github"
       }
     },
     "systems": {
