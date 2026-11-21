@@ -386,6 +386,7 @@ just --list
 `just sendspin-status [host]`:: Show the status of the Sendspin player on a receiver.
 `just set-password <user> [host]`:: Store a hashed password for a user in the nix-secrets repository.
 `just provision-ssh-host-keys <device> [host]`:: Write a host's SSH host keys from the nix-secrets repository to a freshly flashed SD card.
+`just save-sendspin-state [address] [host]`:: Save the Sendspin player's identity and pairing records from a receiver to the nix-secrets repository.
 
 == Secrets
 
@@ -401,6 +402,12 @@ This file is encrypted with sops for my age key and the Piceiver's age key.
 Set them with the `just set-password <user>` recipe.
 * `sendspin-cli/state` contains the Sendspin player's identity and pairing records.
 It's copied into the player's state directory when it's missing, so that Music Assistant doesn't have to pair with the player again on a new SD card.
+The copy in the nix-secrets repository is a snapshot, so update it after pairing the player with a new server, then commit and push the nix-secrets repository and update the `nix-secrets` input.
++
+[,sh]
+----
+just save-sendspin-state piceiver.local
+----
 * `ssh/*` holds the Piceiver's SSH host keys.
 `authorized_keys/jordan` and `authorized_keys/root`::
 These are the public SSH keys allowed to log in as each user.

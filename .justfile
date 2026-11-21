@@ -91,3 +91,18 @@ provision-ssh-host-keys device host="piceiver":
             | sudo install --mode=644 /dev/stdin "$mount/etc/ssh/$key.pub"
     done
     echo "Installed the SSH host keys for {{ host }} on $partition."
+
+# Save the Sendspin player's identity and pairing records from a receiver to the secrets repository.
+# Run this after pairing the player with a new server, i.e. just save-sendspin-state piceiver.local piceiver.
+save-sendspin-state address="piceiver.local" host="piceiver":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    file="{{ secrets }}/hosts/shared/{{ host }}/secrets.yaml"
+    key='["sendspin-cli"]["state"]'
+    remote_state="cat /home/core/.local/state/sendspin-cli/state"
+    if cmp --silent <(ssh "root@{{ address }}" "$remote_state") <(sops decrypt --extract "$key" "$file"); then
+        echo "The Sendspin player state in the secrets repository is already up to date."
+        exit 0
+    fi
+    ssh "root@{{ address }}" "$remote_state" | jq --raw-input --slurp . | sops set --value-stdin "$file" "$key"
+    echo "Saved the Sendspin player state. Commit and push the secrets repository, then update the nix-secrets input."
