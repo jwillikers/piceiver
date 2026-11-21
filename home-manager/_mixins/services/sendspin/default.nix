@@ -51,6 +51,8 @@ lib.mkIf (lib.elem username installFor) {
         # On the Piceiver, output to the combined sink which drives the amplifier and the subwoofer.
         ++ lib.optionals (role == "piceiver") [ "PULSE_SINK=Combined_Stereo_Sink" ];
         ExecStart = "${lib.getExe pkgs.sendspin-go} " + builtins.toString sendspinFlags;
+        # The player logs every mDNS discovery of the server, which is every few seconds.
+        LogFilterPatterns = "~Discovered server";
         Restart = "on-failure";
         RestartSec = 10;
       };
