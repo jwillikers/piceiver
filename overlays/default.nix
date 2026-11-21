@@ -42,19 +42,10 @@
     ffmpeg = prev.ffmpeg.override {
       ffmpegVariant = "headless";
     };
-    # Disable GTK support and add PipeWire GStreamer plugin.
-    rygel = prev.rygel.overrideAttrs (prevAttrs: {
-      nativeBuildInputs = (prev.lib.lists.remove prev.wrapGAppsHook3 prevAttrs.nativeBuildInputs) ++ [
-        prev.wrapGAppsNoGuiHook
-      ];
-      buildInputs = (prev.lib.lists.remove final.gtk3 prevAttrs.buildInputs) ++ [
-        prev.pipewire
-        prev.gdk-pixbuf
-      ];
-      mesonFlags = prevAttrs.mesonFlags ++ [
-        "-Dgtk=disabled"
-        "-Dx11=disabled"
-      ];
+    # Disable GTK and X11 support.
+    rygel = (prev.rygel.override { withGtk = false; }).overrideAttrs (prevAttrs: {
+      buildInputs = prev.lib.lists.remove final.libx11 prevAttrs.buildInputs;
+      mesonFlags = prevAttrs.mesonFlags ++ [ "-Dx11=disabled" ];
       patches = prevAttrs.patches or [ ] ++ [
         (prev.fetchpatch2 {
           url = "https://gitlab.gnome.org/jwillikers/rygel/-/commit/8c7052ac7d61f190adeb1ef4251e6c7c77993872.patch";
