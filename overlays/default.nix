@@ -55,70 +55,29 @@
     });
     # todo Make it possible to disable graphviz support in libcamera.
     graphviz = prev.graphviz.override { withXorg = false; };
-    # Can't cross compile gst-editing-services for some reason:
-    # tests/validate/meson.build:11:13: ERROR: Program 'gst-tester-1.0' not found or not executable
-    # gst_all_1 = prev.lib.filterAttrs (name: _: name != "gst-editing-services") (prev.gst_all_1 // {
-    gst_all_1 = prev.gst_all_1 // {
-      # gstreamer = prev.gst_all_1.gstreamer.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-6/R7a+71CKAMhVfUwfFxPlx++bpw2sRd7tgOGCvPJg8=";
-      #   };
-      # });
-      # gst-plugins-bad = prev.gst_all_1.gst-plugins-bad.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-Nvz3qa8KdTtDuwO5g1JG901y9xJDaeZqHi3HsE9aXKs=";
-      #   };
-      # });
-      gst-plugins-base = prev.gst_all_1.gst-plugins-base.override {
-        enableX11 = false;
-        enableWayland = false;
-      };
-      # }).overrideAttrs
-      #   (prevAttrs: rec {
-      #     # version = "1.24.9";
-      #     # src = prev.fetchurl {
-      #     #   url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     #   hash = "sha256-W7O5RpB9POBN2EK2EMgRHCsGETUbJaH6Iq9e+ol4V8s=";
-      #     # };
-      #   });
-      gst-plugins-good = prev.gst_all_1.gst-plugins-good.override {
-        enableX11 = false;
-        enableWayland = false;
-      };
-      # }).overrideAttrs
-      #   (prevAttrs: rec {
-      #     version = "1.24.9";
-      #     src = prev.fetchurl {
-      #       url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #       hash = "sha256-iX3lC/8zfjyi+G8eqijggo2DAkFWFipQxOoK+G4peZ8=";
-      #     };
-      #   });
-      # gst-libva = prev.gst_all_1.gst-libva.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-MmgumuUI7gH0+xNLOlIAgeKsAHIgmXV3YksdFhcdRWw=";
-      #   };
-      # });
-      gst-plugins-rs = prev.gst_all_1.gst-plugins-rs.override {
-        withGtkPlugins = false;
-      };
-      # gst-plugins-ugly = prev.gst_all_1.gst-plugins-ugly.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-S2swEQ84zQXrZ0IilxQrdaVf4AADEF9IsTYD5nYcw7Y=";
-      #   };
-      # });
-      # todo Fix this upstream.
-      gst-editing-services = prev.gst_all_1.gst-editing-services.overrideAttrs (prevAttrs: {
-        mesonFlags = prevAttrs.mesonFlags ++ [ (prev.lib.mesonEnable "tests" false) ];
-      });
-    };
+    # Override the whole GStreamer scope so every GStreamer package and anything using gst_all_1
+    # builds against the same gst-plugins-base without X11 and Wayland support.
+    gst_all_1 = prev.gst_all_1.overrideScope (
+      _gst-final: gst-prev: {
+        gst-plugins-base = gst-prev.gst-plugins-base.override {
+          enableX11 = false;
+          enableWayland = false;
+        };
+        gst-plugins-good = gst-prev.gst-plugins-good.override {
+          enableX11 = false;
+          enableWayland = false;
+        };
+        gst-plugins-rs = gst-prev.gst-plugins-rs.override {
+          withGtkPlugins = false;
+        };
+        # Can't cross compile the gst-editing-services tests:
+        # tests/validate/meson.build:11:13: ERROR: Program 'gst-tester-1.0' not found or not executable
+        # todo Fix this upstream.
+        gst-editing-services = gst-prev.gst-editing-services.overrideAttrs (prevAttrs: {
+          mesonFlags = prevAttrs.mesonFlags ++ [ (prev.lib.mesonEnable "tests" false) ];
+        });
+      }
+    );
     # todo Does this need fixed upstream?!
     # python3Packages.gst-python = prev.python3Packages.gst-python.overrideAttrs (prevAttrs: {
     #   # nativeBuildInputs = prev.lib.lists.remove prev.xorg-server prevAttrs.nativeBuildInputs;
