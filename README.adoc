@@ -387,6 +387,7 @@ just --list
 `just set-password <user> [host]`:: Store a hashed password for a user in the nix-secrets repository.
 `just provision-ssh-host-keys <device> [host]`:: Write a host's SSH host keys from the nix-secrets repository to a freshly flashed SD card.
 `just save-sendspin-state [address] [host]`:: Save the Sendspin player's identity and pairing records from a receiver to the nix-secrets repository.
+`just rotate-ssh-host-keys [address] [host]`:: Replace a host's SSH host keys and re-encrypt its secrets for its new age key.
 
 == Secrets
 
@@ -422,6 +423,58 @@ Instead, write the SSH host keys from the nix-secrets repository to a freshly fl
 ----
 just provision-ssh-host-keys /dev/mmcblkX
 ----
+
+[IMPORTANT]
+====
+Back up the SSH host keys of every host that decrypts secrets, i.e. in a password manager, separately from the nix-secrets repository.
+A host's age key is derived from its SSH host key, so losing the key means the host can't decrypt its secrets, and every file encrypted for it has to be re-encrypted for a new key.
+The copy in the nix-secrets repository can only be decrypted with my age key or the host's own key, so it isn't a backup if both are lost.
+Print the Piceiver's private SSH host key to copy into a password manager with the following command.
+
+[,sh]
+----
+sops decrypt --extract '["ssh"]["ssh_host_ed25519_key"]' ../nix-secrets/hosts/shared/piceiver/secrets.yaml
+----
+
+Replace the backup whenever the SSH host keys are rotated.
+====
+
+=== Rotate the SSH Host Keys
+
+Rotate a host's SSH host keys if they may have been exposed.
+Since the host's age key is derived from its SSH host key, rotating them also changes the key that the host decrypts its secrets with.
+The order of the steps matters, as the host needs to be able to decrypt its secrets at every point.
+The `rotate-ssh-host-keys` recipe performs the following steps.
+
+. Generate new SSH host keys on the host in a temporary directory, leaving the SSH server on the current keys.
+. Store the new keys in the host's secrets file in the nix-secrets repository.
+. Replace the host's age key in the `.sops.yaml` file of the nix-secrets repository with the one derived from the new SSH host key.
+. Re-encrypt the host's secrets for the new age key with `sops updatekeys`.
+. Install the new SSH host keys on the host and restart the SSH server.
+. Replace the host's entries in `~/.ssh/known_hosts` with the new public keys.
+
+[,sh]
+----
+just rotate-ssh-host-keys piceiver.local
+----
+
+Then finish the rotation before the host reboots.
+Until the new configuration is deployed, the host's current system still contains secrets encrypted for its old age key, which it can no longer decrypt.
+
+. Commit and push the nix-secrets repository.
+. Update the `nix-secrets` input.
++
+[,sh]
+----
+nix flake update nix-secrets
+----
+. Deploy the new configuration.
++
+[,sh]
+----
+just deploy piceiver
+----
+. Back up the new private SSH host key and replace the old backup.
 
 The recipes expect the nix-secrets repository to be checked out next to this repository.
 Set the `NIX_SECRETS` environment variable to use a different location.

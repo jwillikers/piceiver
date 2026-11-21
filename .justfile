@@ -106,3 +106,48 @@ save-sendspin-state address="piceiver.local" host="piceiver":
     fi
     ssh "root@{{ address }}" "$remote_state" | jq --raw-input --slurp . | sops set --value-stdin "$file" "$key"
     echo "Saved the Sendspin player state. Commit and push the secrets repository, then update the nix-secrets input."
+
+# Afterwards, commit and push the secrets repository, update the nix-secrets input,
+# and deploy before rebooting the host, i.e. just rotate-ssh-host-keys piceiver.local piceiver.
+# Rotate a host's SSH host keys, which also changes the age key it decrypts its secrets with.
+rotate-ssh-host-keys address="piceiver.local" host="piceiver":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    secrets=$(realpath "{{ secrets }}")
+    file="$secrets/hosts/shared/{{ host }}/secrets.yaml"
+    staging=/etc/ssh/rotate
+    remote() { ssh "root@{{ address }}" "$@"; }
+
+    echo "Generating new SSH host keys in $staging on {{ address }}."
+    remote "rm -rf $staging && install --directory --mode=700 $staging \
+        && ssh-keygen -q -t ed25519 -N '' -C 'root@{{ host }}' -f $staging/ssh_host_ed25519_key \
+        && ssh-keygen -q -t rsa -b 4096 -N '' -C 'root@{{ host }}' -f $staging/ssh_host_rsa_key"
+
+    echo "Storing the new SSH host keys in $file."
+    for key in ssh_host_ed25519_key ssh_host_ed25519_key.pub ssh_host_rsa_key ssh_host_rsa_key.pub; do
+        remote "cat $staging/$key" | jq --raw-input --slurp . | sops set --value-stdin "$file" "[\"ssh\"][\"$key\"]"
+    done
+
+    age_key=$(sops decrypt --extract '["ssh"]["ssh_host_ed25519_key.pub"]' "$file" | ssh-to-age)
+    echo "Re-encrypting the secrets for {{ host }} for its new age key, $age_key."
+    sed --in-place --regexp-extended "s|(&{{ host }} )age1[a-z0-9]+|\1$age_key|" "$secrets/.sops.yaml"
+    grep --quiet "&{{ host }} $age_key" "$secrets/.sops.yaml"
+    (cd "$secrets" && for dir in "hosts/shared/{{ host }}" hosts/shared/all; do
+        if [ -d "$dir" ]; then find "$dir" -name '*.yaml'; fi
+    done | xargs --no-run-if-empty -n 1 sops updatekeys --yes)
+
+    echo "Activating the new SSH host keys on {{ address }}."
+    remote "for key in ssh_host_ed25519_key ssh_host_rsa_key; do \
+            install --mode=600 $staging/\$key /etc/ssh/\$key \
+            && install --mode=644 $staging/\$key.pub /etc/ssh/\$key.pub; \
+        done && rm -rf $staging && systemctl restart sshd"
+
+    echo "Updating the known hosts for {{ address }}."
+    ssh-keygen -R "{{ address }}" >/dev/null 2>&1 || true
+    for key in ssh_host_ed25519_key.pub ssh_host_rsa_key.pub; do
+        echo "{{ address }} $(sops decrypt --extract "[\"ssh\"][\"$key\"]" "$file" | cut -d ' ' -f 1,2)"
+    done >> ~/.ssh/known_hosts
+
+    echo "Rotated the SSH host keys for {{ host }}."
+    echo "Now commit and push the secrets repository, run 'nix flake update nix-secrets', and deploy."
+    echo "Until then, rebooting {{ host }} leaves it unable to decrypt its secrets."
