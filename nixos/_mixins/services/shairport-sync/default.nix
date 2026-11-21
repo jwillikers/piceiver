@@ -28,7 +28,8 @@ lib.mkIf (role == "piceiver") {
       session_timeout = 60;
     };
     diagnostics = {
-      log_verbosity = 1;
+      // Debug messages flood the journal, which is kept in RAM.
+      log_verbosity = 0;
     };
   '';
   environment.etc."shairport-sync-airplay-1.conf".text = ''
@@ -56,7 +57,8 @@ lib.mkIf (role == "piceiver") {
       session_timeout = 60;
     };
     diagnostics = {
-      log_verbosity = 2;
+      // Debug messages flood the journal, which is kept in RAM.
+      log_verbosity = 0;
     };
   '';
   networking.firewall = {
