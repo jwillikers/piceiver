@@ -9,52 +9,52 @@
 let
   installFor = [ "core" ];
   # Keep in sync with the firewall port in nixos/_mixins/services/sendspin/default.nix.
-  port = 8927;
+  port = 8928;
+  # On the Piceiver, output to the combined sink which drives the amplifier and the subwoofer.
+  # Otherwise, use PipeWire's default sink.
+  output = if role == "piceiver" then "pipewire:Combined_Stereo_Sink" else "pipewire";
   sendspinFlags = [
-    "--daemon"
     "--name ${osConfig.networking.hostName}"
+    "--output ${output}"
     "--port ${toString port}"
   ];
 in
 lib.mkIf (lib.elem username installFor) {
   systemd.user.services = {
     # Sendspin player which Music Assistant discovers over mDNS and streams to.
-    # Audio is played through PipeWire's PulseAudio server.
+    # Connections are encrypted, and a server must pair with the player before it can play.
+    # The pairing code is logged to the journal when a server starts pairing.
     sendspin-player = {
       Unit = {
         Description = "Sendspin player";
+        Documentation = "https://github.com/Sendspin/sendspin-cpp-cli";
         After = [
           "pipewire.service"
-          "pipewire-pulse.service"
           "wireplumber.service"
           # The wireplumber-init service ensures the volume is set correctly before playback starts.
           "wireplumber-init.service"
         ];
-        BindsTo = [ "pipewire-pulse.service" ];
+        BindsTo = [ "pipewire.service" ];
         Requires = [ "wireplumber-init.service" ];
-        Wants = [
-          "pipewire.service"
-          "wireplumber.service"
-        ];
+        Wants = [ "wireplumber.service" ];
       };
       Service = {
-        Environment = [
-          # miniaudio loads the audio backend libraries at runtime with dlopen.
-          "LD_LIBRARY_PATH=${
-            lib.makeLibraryPath [
-              pkgs.alsa-lib
-              pkgs.libpulseaudio
-            ]
-          }"
-        ]
-        # miniaudio uses the default PulseAudio sink when no audio device is given.
-        # On the Piceiver, output to the combined sink which drives the amplifier and the subwoofer.
-        ++ lib.optionals (role == "piceiver") [ "PULSE_SINK=Combined_Stereo_Sink" ];
-        ExecStart = "${lib.getExe pkgs.sendspin-go} " + builtins.toString sendspinFlags;
-        # The player logs every mDNS discovery of the server, which is every few seconds.
-        LogFilterPatterns = "~Discovered server";
+        ExecStart = "${lib.getExe pkgs.sendspin-cli} " + builtins.toString sendspinFlags;
         Restart = "on-failure";
         RestartSec = 10;
+        # Hardening from the upstream user service.
+        LockPersonality = true;
+        MemoryDenyWriteExecute = true;
+        NoNewPrivileges = true;
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+          "AF_NETLINK"
+        ];
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+        SystemCallFilter = "@system-service";
       };
       Install = {
         WantedBy = [ "default.target" ];

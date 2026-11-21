@@ -18,6 +18,7 @@ endif::[]
 :nixos-raspberrypi: https://github.com/nvmd/nixos-raspberrypi[nixos-raspberrypi]
 :Rygel: https://gnome.pages.gitlab.gnome.org/rygel/[Rygel]
 :Sendspin: https://www.sendspin-audio.com/[Sendspin]
+:sendspin-cpp-cli: https://github.com/Sendspin/sendspin-cpp-cli[sendspin-cpp-cli]
 :Shairport-Sync: https://github.com/mikebrady/shairport-sync[Shairport Sync]
 :WirePlumber: https://gitlab.freedesktop.org/pipewire/wireplumber[WirePlumber]
 
@@ -422,10 +423,28 @@ I've not yet tested whether Bluetooth MIDI works.
 === Multi-room Audio with Sendspin
 
 Multi-room audio is handled by {Music-Assistant} and the {Sendspin} protocol.
-Each receiver runs a Sendspin player as a systemd service for the `core` user.
-The player advertises itself over mDNS on TCP port 8927, where Music Assistant discovers it automatically.
+Each receiver runs the {sendspin-cpp-cli} player as a systemd service for the `core` user.
+The player advertises itself over mDNS on TCP port 8928, where Music Assistant discovers it automatically.
 Music Assistant streams audio to the players and keeps their playback synchronized.
 On the Piceiver, the Sendspin player outputs to the combined stereo and sub output.
+
+Connections are encrypted, and Music Assistant must pair with a player before it can play to it.
+To pair, start pairing for the player in Music Assistant.
+The player logs a 6-digit pairing code, which you enter in Music Assistant.
+The code can be found in the journal on the receiver.
+
+[,sh]
+----
+sudo journalctl --grep 'Pairing code'
+----
+
+The player is packaged in this repository since it isn't yet available in Nixpkgs.
+Update it and the dependencies that it pins with the `update-packages` app.
+
+[,sh]
+----
+nix run .#update-packages
+----
 
 [NOTE]
 ====
@@ -629,7 +648,7 @@ However, I have to disable suspend for that node otherwise nothing ever comes th
 * https://nixos.org/manual/nixos/stable/[NixOS Manual]
 * https://docs.pipewire.org/[PipeWire Documentation]
 * https://github.com/mikebrady/shairport-sync/blob/master/scripts/shairport-sync.conf[shairport-sync Configuration]
-* https://github.com/Sendspin/sendspin-go[Sendspin Go]
+* https://github.com/Sendspin/sendspin-cpp-cli[sendspin-cpp-cli]
 * https://pipewire.pages.freedesktop.org/wireplumber/[WirePlumber Documentation]
 
 // todo Add more.
