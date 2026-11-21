@@ -18,6 +18,15 @@ let
     "--output ${output}"
     "--port ${toString port}"
   ];
+  # With secrets, the player's identity and pairing records are stored in the nix-secrets repository.
+  # Restore them when they're missing, i.e. on a new SD card, so that Music Assistant doesn't have to pair again.
+  # The player writes to this file, so it's copied instead of linked.
+  stateSecret = osConfig.sops.secrets."sendspin-cli/state".path or null;
+  restoreState = pkgs.writeShellScript "restore-sendspin-state" ''
+    if [ ! -e "$1" ]; then
+      ${lib.getExe' pkgs.coreutils "install"} -D --mode=600 "$2" "$1"
+    fi
+  '';
 in
 lib.mkIf (lib.elem username installFor) {
   # Make the player's subcommands available, i.e. sendspin-cli status.
@@ -41,6 +50,9 @@ lib.mkIf (lib.elem username installFor) {
         Wants = [ "wireplumber.service" ];
       };
       Service = {
+        ExecStartPre = lib.optional (
+          stateSecret != null
+        ) "${restoreState} %S/sendspin-cli/state ${stateSecret}";
         ExecStart = "${lib.getExe pkgs.sendspin-cli} " + builtins.toString sendspinFlags;
         Restart = "on-failure";
         RestartSec = 10;
