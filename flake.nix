@@ -237,6 +237,12 @@
           # };
         };
         sshUser = "root";
+        # Root may only log in from the local network.
+        # piceiver.local can resolve to a global IPv6 address, so connect over IPv4.
+        sshOpts = [
+          "-o"
+          "AddressFamily=inet"
+        ];
       };
       nixosConfigurations = {
         piceiver = mkRaspberryPiSystem {

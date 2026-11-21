@@ -700,6 +700,8 @@ Using a new image every time isn't gonna fly with flash storage or the value of 
 After that, I need to figure out how to configure Net-SNMP in NixOS, as monitoring is a really nice feature to have in place.
 
 .Todo
+* Prevent logging in as `root` over SSH entirely once the image is finalized and working as expected.
+For now, `root` may log in with an SSH key from the local network only.
 * Fix the sub flipping on and off when idle.
 * Auto-mute speakers and subwoofer when nothing is being output.
 I think that the constant input from the digital optical input causes this.
