@@ -1,4 +1,5 @@
 {
+  pkgs,
   config,
   inputs,
   lib,
@@ -10,6 +11,8 @@ let
 in
 {
   nix = {
+    # Use Lix from nixpkgs.
+    package = pkgs.lixPackageSets.stable.lix;
     gc = {
       automatic = true;
       dates = "Mon *-*-* 03:03:00";
@@ -32,7 +35,7 @@ in
     # Disable channels
     channel.enable = false;
     # Make flake registry and nix path match flake inputs
-    registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+    # registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   };
 }

@@ -50,7 +50,8 @@ in
     wireplumber = {
       configPackages = [
         pkgs.wireplumber-optimize-usb-config
-      ] ++ lib.optionals (role == "piceiver") [ pkgs.wireplumber-config ];
+      ]
+      ++ lib.optionals (role == "piceiver") [ pkgs.wireplumber-config ];
     };
   };
 }

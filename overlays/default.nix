@@ -42,19 +42,10 @@
     ffmpeg = prev.ffmpeg.override {
       ffmpegVariant = "headless";
     };
-    # Disable GTK support and add PipeWire GStreamer plugin.
-    rygel = prev.rygel.overrideAttrs (prevAttrs: {
-      nativeBuildInputs = (prev.lib.lists.remove prev.wrapGAppsHook3 prevAttrs.nativeBuildInputs) ++ [
-        prev.wrapGAppsNoGuiHook
-      ];
-      buildInputs = (prev.lib.lists.remove final.gtk3 prevAttrs.buildInputs) ++ [
-        prev.pipewire
-        prev.gdk-pixbuf
-      ];
-      mesonFlags = prevAttrs.mesonFlags ++ [
-        "-Dgtk=disabled"
-        "-Dx11=disabled"
-      ];
+    # Disable GTK and X11 support.
+    rygel = (prev.rygel.override { withGtk = false; }).overrideAttrs (prevAttrs: {
+      buildInputs = prev.lib.lists.remove final.libx11 prevAttrs.buildInputs;
+      mesonFlags = prevAttrs.mesonFlags ++ [ "-Dx11=disabled" ];
       patches = prevAttrs.patches or [ ] ++ [
         (prev.fetchpatch2 {
           url = "https://gitlab.gnome.org/jwillikers/rygel/-/commit/8c7052ac7d61f190adeb1ef4251e6c7c77993872.patch";
@@ -64,63 +55,55 @@
     });
     # todo Make it possible to disable graphviz support in libcamera.
     graphviz = prev.graphviz.override { withXorg = false; };
-    gst_all_1 = prev.gst_all_1 // {
-      # gstreamer = prev.gst_all_1.gstreamer.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-6/R7a+71CKAMhVfUwfFxPlx++bpw2sRd7tgOGCvPJg8=";
-      #   };
-      # });
-      # gst-plugins-bad = prev.gst_all_1.gst-plugins-bad.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-Nvz3qa8KdTtDuwO5g1JG901y9xJDaeZqHi3HsE9aXKs=";
-      #   };
-      # });
-      gst-plugins-base = prev.gst_all_1.gst-plugins-base.override {
-        enableX11 = false;
-        enableWayland = false;
-      };
-      # }).overrideAttrs
-      #   (prevAttrs: rec {
-      #     # version = "1.24.9";
-      #     # src = prev.fetchurl {
-      #     #   url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     #   hash = "sha256-W7O5RpB9POBN2EK2EMgRHCsGETUbJaH6Iq9e+ol4V8s=";
-      #     # };
-      #   });
-      gst-plugins-good = prev.gst_all_1.gst-plugins-good.override {
-        enableX11 = false;
-        enableWayland = false;
-      };
-      # }).overrideAttrs
-      #   (prevAttrs: rec {
-      #     version = "1.24.9";
-      #     src = prev.fetchurl {
-      #       url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #       hash = "sha256-iX3lC/8zfjyi+G8eqijggo2DAkFWFipQxOoK+G4peZ8=";
-      #     };
-      #   });
-      # gst-libva = prev.gst_all_1.gst-libva.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-MmgumuUI7gH0+xNLOlIAgeKsAHIgmXV3YksdFhcdRWw=";
-      #   };
-      # });
-      gst-plugins-rs = prev.gst_all_1.gst-plugins-rs.override {
-        withGtkPlugins = false;
-      };
-      # gst-plugins-ugly = prev.gst_all_1.gst-plugins-ugly.overrideAttrs (prevAttrs: rec {
-      #   version = "1.24.9";
-      #   src = prev.fetchurl {
-      #     url = "https://gstreamer.freedesktop.org/src/${prevAttrs.pname}/${prevAttrs.pname}-${version}.tar.xz";
-      #     hash = "sha256-S2swEQ84zQXrZ0IilxQrdaVf4AADEF9IsTYD5nYcw7Y=";
-      #   };
-      # });
-    };
+    # Override the whole GStreamer scope so every GStreamer package and anything using gst_all_1
+    # builds against the same gst-plugins-base without X11 and Wayland support.
+    gst_all_1 = prev.gst_all_1.overrideScope (
+      _gst-final: gst-prev: {
+        gst-plugins-base = gst-prev.gst-plugins-base.override {
+          enableX11 = false;
+          enableWayland = false;
+        };
+        gst-plugins-good = gst-prev.gst-plugins-good.override {
+          enableX11 = false;
+          enableWayland = false;
+        };
+        gst-plugins-rs = gst-prev.gst-plugins-rs.override {
+          withGtkPlugins = false;
+        };
+        # Can't cross compile the gst-editing-services tests:
+        # tests/validate/meson.build:11:13: ERROR: Program 'gst-tester-1.0' not found or not executable
+        # todo Fix this upstream.
+        gst-editing-services = gst-prev.gst-editing-services.overrideAttrs (prevAttrs: {
+          mesonFlags = prevAttrs.mesonFlags ++ [ (prev.lib.mesonEnable "tests" false) ];
+        });
+      }
+    );
+    # todo Does this need fixed upstream?!
+    # python3Packages.gst-python = prev.python3Packages.gst-python.overrideAttrs (prevAttrs: {
+    #   # nativeBuildInputs = prev.lib.lists.remove prev.xorg-server prevAttrs.nativeBuildInputs;
+    #   propagatedBuildInputs = prevAttrs.propagatedBuildInputs ++ [final.gst_all_1.gst-rtsp-server];
+    #   # mesonFlags = prevAttrs.mesonFlags ++ [ "-Denable-x11=false" ];
+    # });
+    # python3 = prev.python3.override {
+    #   packageOverrides = self: super: {
+    #     # We need toPythonModule for the package set to evaluate this
+    #     blas = super.toPythonModule (super.pkgs.blas.override { blasProvider = super.pkgs.mkl; });
+    #   };
+    # };
+    # python = final.python.override {
+    #   packageOverrides = python-prev: python-final: {
+    #     gst-python = python-final.gst-python.overrideAttrs (prevAttrs: {
+    #       propagatedBuildInputs = prevAttrs.propagatedBuildInputs ++ [final.gst_all_1.gst-rtsp-server];
+    #     });
+    #   };
+    # };
+    pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+      (_python-final: python-prev: {
+        gst-python = python-prev.gst-python.overridePythonAttrs (prevAttrs: {
+          buildInputs = prevAttrs.buildInputs ++ [ final.gst_all_1.gst-rtsp-server ];
+        });
+      })
+    ];
     gtk3 = prev.gtk3.override {
       broadwaySupport = false;
       cupsSupport = false;
@@ -152,178 +135,26 @@
         "ac_cv_va_copy=1"
       ];
     });
-    # todo Fix this so that it actually gets used as part of the service...
-    mopidyPackages = prev.mopidyPackages // {
-      # Use a newer version and add PipeWire GStreamer plugin.
-      mopidy = prev.python3Packages.buildPythonApplication rec {
-        pname = "mopidy";
-        pyproject = true;
-        version = "4.0.0a1";
-
-        src = prev.fetchFromGitHub {
-          owner = "mopidy";
-          repo = "mopidy";
-          rev = "refs/tags/v${version}";
-          hash = "sha256-+YjiAysDVfuEpohcWMU5he8yp1tr/g4aLxqrKuhrjWY=";
-        };
-
-        patches = [
-          ./0001-Use-playbin3.patch
-          ./0002-Use-decodebin3.patch
-        ];
-
-        build-system = with prev.python3Packages; [
-          setuptools
-          setuptools-scm
-        ];
-
-        nativeBuildInputs = [ prev.wrapGAppsNoGuiHook ];
-
-        propagatedNativeBuildInputs = [
-          prev.gobject-introspection
-        ];
-
-        propagatedBuildInputs = [
-          prev.gobject-introspection
-        ];
-
-        buildInputs =
-          with final.gst_all_1;
-          [
-            gst-plugins-bad
-            gst-plugins-base
-            gst-plugins-good
-            gst-plugins-ugly
-            gst-plugins-rs
-          ]
-          ++ [
-            prev.glib-networking
-            prev.pipewire
-          ];
-
-        dependencies = with prev.python3Packages; [
-          gst-python
-          pygobject3
-          pykka
-          requests
-          setuptools
-          tornado
-        ];
-
-        # There are no tests
-        doCheck = false;
-
-        meta = {
-          homepage = "https://www.mopidy.com/";
-          description = "Extensible music server that plays music from local disk, Spotify, SoundCloud, and more";
-          mainProgram = "mopidy";
-          license = with prev.lib.licenses; [ asl20 ];
-          maintainers = with prev.lib.maintainers; [ fpletz ];
-          hydraPlatforms = [ ];
-        };
-      };
-    };
     nushell = prev.nushell.override {
       withDefaultFeatures = false;
     };
-    openslide = prev.openslide.overrideAttrs (_prevAttrs: {
-      depsBuildBuild = [ prev.buildPackages.stdenv.cc ];
-    });
+    # openslide = prev.openslide.overrideAttrs (_prevAttrs: {
+    #   depsBuildBuild = [ prev.buildPackages.stdenv.cc ];
+    # });
     pipewire = prev.pipewire.override {
       # todo Add support for disabling x11Support in vulkan-loader package.
       vulkanSupport = false;
       x11Support = false;
     };
-    poppler = prev.poppler.overrideAttrs (prevAttrs: {
-      nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [ prev.glib ];
-    });
-    # NODE_OPTIONS = "--openssl-legacy-provider";
-    # nodePackages.sharp = prev.nodePackages.sharp.override (oldAttrs:{
-    # nativeBuildInputs = [
-    #   prev.pkg-config
-    # ];
-    # buildInputs = with prev; [
-    #   # required by sharp
-    #   # https://sharp.pixelplumbing.com/install
-    #   vips
-    #   final.node-gyp-build
-    #   node-pre-gyp
-    # ];
-
-    snapweb = prev.snapweb.overrideAttrs (
-      prevAttrs:
-      let
-        node-addon-api = prev.stdenvNoCC.mkDerivation rec {
-          pname = "node-addon-api";
-          version = "8.0.0";
-          src = prev.fetchFromGitHub {
-            owner = "nodejs";
-            repo = "node-addon-api";
-            rev = "v${version}";
-            hash = "sha256-k3v8lK7uaEJvcaj1sucTjFZ6+i5A6w/0Uj9rYlPhjCE=";
-          };
-          installPhase = ''
-            mkdir $out
-            cp -r *.c *.h *.gyp *.gypi index.js package-support.json package.json tools $out/
-          '';
-        };
-      in
-      {
-        makeCacheWritable = true; # sharp tries to build stuff in node_modules
-        nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [
-          prev.node-gyp
-          node-addon-api
-          prev.python3
-        ];
-        env.SHARP_FORCE_GLOBAL_LIBVIPS = "true";
-        # preBuild = ''
-        #   pushd node_modules/sharp
-
-        #   mkdir node_modules
-        #   ln -s ${node-addon-api} node_modules/node-addon-api
-
-        #   ${prev.lib.getExe prev.nodejs} install/check
-
-        #   rm -r node_modules
-
-        #   popd
-        #   rm -r node_modules/@img/sharp*
-        # '';
-        # pkgConfig.sharp = {
-        #   nativeBuildInputs = [
-        #     prev.pkg-config
-        #     prev.python3
-        #     prev.node-gyp
-        #     prev.nodePackages.semver
-        #   ];
-        #   buildInputs = [ prev.vips ];
-        #   postInstall = ''
-        #     yarn --offline run install
-        #   '';
-        # };
-        # nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [prev.node-gyp];
-        # buildInputs = prevAttrs.buildInputs ++ [prev.nodePackages.sharp];
-        # # add newer node-addon-api to build sharp
-        # # https://github.com/lovell/sharp/issues/3920
-        # dependencies = [
-        #   {
-        #     name = "node-addon-api";
-        #     packageName = "node-addon-api";
-        #     version = "7.1.0";
-        #     src = prev.fetchurl {
-        #       url = "https://registry.npmjs.org/node-addon-api/-/node-addon-api-7.1.0.tgz";
-        #       sha512 = "mNcltoe1R8o7STTegSOHdnJNN7s5EUvhoS7ShnTHDyOSd+8H+UdWODq6qSv67PjC8Zc5JRT8+oLAMCr0SIXw7g==";
-        #     };
-        #   }
-        # ];
-      }
-    );
+    # poppler = prev.poppler.overrideAttrs (prevAttrs: {
+    #   nativeBuildInputs = prevAttrs.nativeBuildInputs ++ [ prev.glib ];
+    # });
     # Not sure how to entirely disable openconnect which is pulled in by NetworkManager.
     # So instead, just disable the GTK dependency that it indirectly pulls in.
     stoken = prev.stoken.override { withGTK3 = false; };
     libxkbcommon = prev.libxkbcommon.overrideAttrs (prevAttrs: {
-      nativeBuildInputs = prev.lib.lists.remove prev.xorg.xorgserver prevAttrs.nativeBuildInputs;
-      buildInputs = prev.lib.lists.remove prev.xorg.libxcb prevAttrs.buildInputs;
+      nativeBuildInputs = prev.lib.lists.remove prev.xorg-server prevAttrs.nativeBuildInputs;
+      buildInputs = prev.lib.lists.remove prev.libxcb prevAttrs.buildInputs;
       mesonFlags = prevAttrs.mesonFlags ++ [ "-Denable-x11=false" ];
     });
     # vips = prev.vips.overrideAttrs(prevAttrs: {
@@ -332,6 +163,37 @@
     # mesonFlags = prevAttrs.mesonFlags ++ [ "-Dmatio=disabled" "-Dopenslide=disabled" "-Dpoppler=disabled" ];
     # });
   };
+
+  # Work around packages which fail to cross-compile.
+  # These overrides only apply when cross-compiling so native builds can still use the binary cache.
+  cross-fixes =
+    _final: prev:
+    prev.lib.optionalAttrs (!prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform) {
+      # The xtask helper used to build the documentation is built for the build platform,
+      # but pkg-config points it at the host platform's pcre2 library.
+      # Build pcre2 from the bundled sources instead, using the build platform's C compiler for the helper.
+      fish = prev.fish.overrideAttrs (prevAttrs: {
+        env = prevAttrs.env // {
+          PCRE2_SYS_STATIC = "1";
+          "CC_${builtins.replaceStrings [ "-" ] [ "_" ] prev.stdenv.buildPlatform.rust.rustcTarget}" =
+            "${prev.buildPackages.stdenv.cc}/bin/cc";
+        };
+      });
+      # The API documentation fails to find gi-docgen as a host dependency when cross-compiling.
+      gupnp-av = prev.gupnp-av.overrideAttrs (prevAttrs: {
+        nativeBuildInputs = prev.lib.lists.remove prev.buildPackages.gi-docgen prevAttrs.nativeBuildInputs;
+        mesonFlags = prev.lib.lists.remove "-Dgtk_doc=true" prevAttrs.mesonFlags ++ [ "-Dgtk_doc=false" ];
+        postFixup = (prevAttrs.postFixup or "") + ''
+          mkdir -p "$devdoc"
+        '';
+      });
+      # go generate builds a tool for the build platform, but links it with the cross compiler.
+      micro = prev.micro.overrideAttrs {
+        preBuild = ''
+          CC=${prev.buildPackages.stdenv.cc}/bin/cc CGO_ENABLED=0 GOOS= GOARCH= go generate ./runtime
+        '';
+      };
+    };
 
   # https://github.com/NixOS/nixpkgs/issues/154163
   allow-missing-modules = _final: prev: {
@@ -345,17 +207,17 @@
 
   # Use a newer version of shairport-sync to get the latest bug fixes.
   # We need fixes for ffmpeg 7 which as-of-yet are unreleased.
-  unstable-shairport-sync = _final: prev: {
-    shairport-sync = prev.shairport-sync.overrideAttrs (_prevAttrs: {
-      version = "4.3.5-dev";
-      src = prev.fetchFromGitHub {
-        repo = "shairport-sync";
-        owner = "mikebrady";
-        rev = "ab6225c1ac1c57f5af50890d722437ec8a921d0d";
-        hash = "sha256-iwyIUUFA5DzTkm/DXvEa3buVX4Dje0P0svteRAKIS20=";
-      };
-    });
-  };
+  # unstable-shairport-sync = _final: prev: {
+  #   shairport-sync = prev.shairport-sync.overrideAttrs (_prevAttrs: {
+  #     version = "4.3.5-dev";
+  #     src = prev.fetchFromGitHub {
+  #       repo = "shairport-sync";
+  #       owner = "mikebrady";
+  #       rev = "ab6225c1ac1c57f5af50890d722437ec8a921d0d";
+  #       hash = "sha256-iwyIUUFA5DzTkm/DXvEa3buVX4Dje0P0svteRAKIS20=";
+  #     };
+  #   });
+  # };
 
   # Add a separate package for shairport-sync with AirPlay 2 support enabled.
   shairport-sync-airplay2 = _final: prev: {
@@ -366,26 +228,6 @@
     _final: prev:
     let
       autoModules = false;
-      v6_6_54 = {
-        rt-patch = {
-          name = "rt";
-          patch = prev.fetchurl {
-            url = "mirror://kernel/linux/kernel/projects/rt/6.6/older/patch-6.6.53-rt44.patch.xz";
-            sha256 = "sha256-LydfWRvOAMby42eDo0arQdpPXuA6v7SWIyDh/eHa07s=";
-          };
-        };
-        modDirVersion = "6.6.54-rt44";
-      };
-      v6_10_12 = {
-        rt-patch = {
-          name = "rt";
-          patch = prev.fetchurl {
-            url = "mirror://kernel/linux/kernel/projects/rt/6.10/older/patch-6.10.2-rt14.patch.xz";
-            sha256 = "sha256-qQ6mXEvk/VQykA322EgG6fWkuaKHTwY/nfZx216N8Jo=";
-          };
-        };
-        modDirVersion = "6.10.12-rt14";
-      };
       stdenv = prev.ccacheStdenv;
       structuredExtraConfig = with prev.lib.kernel; {
         # Audio
@@ -420,7 +262,7 @@
         HFSPLUS_FS = no;
         JFS_FS = no;
         JFFS2_FS = no;
-        NFS_FS = no;
+        NFS_FS = prev.lib.mkForce no;
         NFSD = no;
         NILFS2_FS = no;
         NTFS_FS = no;
@@ -503,7 +345,7 @@
         MAX31856 = no;
 
         ## Input
-        INPUT_JOYSTICK = no;
+        INPUT_JOYSTICK = prev.lib.mkForce no;
         INPUT_TOUCHSCREEN = no;
         INPUT_AD714X = no;
         INPUT_ATI_REMOTE2 = no;
@@ -646,27 +488,17 @@
         CHROME_PLATFORMS = prev.lib.mkForce no;
         TCG_TIS_SPI_CR50 = prev.lib.mkForce no;
       };
+      # Override the nixos-raspberrypi vendor kernels.
+      # Keep the version in sync with kernelBundle in nixos/_mixins/features/raspberry-pi/default.nix.
+      overrideKernel =
+        kernel:
+        kernel.override (prevKernel: {
+          inherit autoModules stdenv;
+          structuredExtraConfig = structuredExtraConfig // (prevKernel.structuredExtraConfig or { });
+        });
     in
     {
-      rpi-kernels.v6_6_54.bcm2711 = prev.rpi-kernels.v6_6_54.bcm2711.override (prevKernel: {
-        inherit autoModules stdenv;
-        inherit (v6_6_54) modDirVersion;
-        kernelPatches = [ v6_6_54.rt-patch ] ++ prevKernel.kernelPatches;
-        structuredExtraConfig = structuredExtraConfig // prevKernel.structuredExtraConfig;
-      });
-      rpi-kernels.v6_6_54.bcm2712 = prev.rpi-kernels.v6_6_54.bcm2712.override (prevKernel: {
-        inherit autoModules stdenv;
-        inherit (v6_6_54) modDirVersion;
-        kernelPatches = [ v6_6_54.rt-patch ] ++ prevKernel.kernelPatches;
-        structuredExtraConfig = structuredExtraConfig // prevKernel.structuredExtraConfig;
-      });
-      # The realtime patchset fails to apply on kernel 6.10.12.
-      # I will probably just wait for 6.12.
-      rpi-kernels.v6_10_12.bcm2712 = prev.rpi-kernels.v6_10_12.bcm2712.override (prevKernel: {
-        inherit autoModules stdenv;
-        inherit (v6_10_12) modDirVersion;
-        structuredExtraConfig = structuredExtraConfig // prevKernel.structuredExtraConfig;
-        kernelPatches = [ v6_10_12.rt-patch ] ++ prevKernel.kernelPatches;
-      });
+      linux_rpi4_v6_12_87 = overrideKernel prev.linux_rpi4_v6_12_87;
+      linux_rpi5_v6_12_87 = overrideKernel prev.linux_rpi5_v6_12_87;
     };
 }

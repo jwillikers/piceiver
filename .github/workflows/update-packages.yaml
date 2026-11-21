@@ -1,0 +1,27 @@
+name: Update Packages
+
+"on":
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - name: Update the Nix packages in the repository
+        run: nix run .#update-packages
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          assignees: ${{ github.repository_owner }}
+          branch: "update/packages"
+          commit-message: "chore(deps): Update Nix packages"
+          title: "chore(deps): Update Nix packages"
+          token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}

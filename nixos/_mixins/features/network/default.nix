@@ -41,13 +41,13 @@
     };
     # Use resolved for DNS resolution; tailscale MagicDNS requires it
     resolved = {
-      dnssec = "true";
       enable = true;
-      # Disable mDNS in resolved since Avahi is being used.
-      extraConfig = ''
-        MulticastDNS=false
-      '';
-      llmnr = "false";
+      settings.Resolve = {
+        DNSSEC = "true";
+        LLMNR = "false";
+        # Disable mDNS in resolved since Avahi is being used.
+        MulticastDNS = "false";
+      };
     };
   };
 

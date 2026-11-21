@@ -1,4 +1,5 @@
 pkgs: {
+  sendspin-cli = pkgs.callPackage ./sendspin-cli/package.nix { };
   initialize-wireplumber = pkgs.callPackage ./initialize-wireplumber/package.nix { };
   pipewire-config = pkgs.callPackage ./pipewire-config/package.nix { };
   wireplumber-config = pkgs.callPackage ./wireplumber-config/package.nix { };

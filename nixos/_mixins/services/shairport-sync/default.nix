@@ -4,7 +4,6 @@ lib.mkIf (role == "piceiver") {
   boot.kernel.sysctl = {
     "net.ipv4.ip_unprivileged_port_start" = 319;
   };
-  # Because this sends audio to Snapcast, the volume is generously scaled up so as not to be too quiet.
   environment.etc."shairport-sync.conf".text = ''
     general = {
       // Seems like 500ms works well here when I stream using PipeWire's RAOP module from my laptop.
@@ -14,21 +13,23 @@ lib.mkIf (role == "piceiver") {
       high_threshold_airplay_volume = -8.0;
       high_volume_idle_timeout_in_minutes = 180;
       mdns_backend = "avahi";
-      output_backend = "pw";
+      output_backend = "pipewire";
       // Use the AirPlay 2 port only.
       port = 7000;
       // Only advertise AirPlay 2.
       regtype = "_airplay._tcp";
       volume_control_profile = "dasl_tapered";
     };
-    pw = {
-      sink_target = "snapserver";
+    pipewire = {
+      sink_target = "Combined_Stereo_Sink";
     };
     sessioncontrol = {
-      session_timeout = 20;
+      // Shairport Sync 5 requires at least 60 seconds.
+      session_timeout = 60;
     };
     diagnostics = {
-      log_verbosity = 1;
+      // Debug messages flood the journal, which is kept in RAM.
+      log_verbosity = 0;
     };
   '';
   environment.etc."shairport-sync-airplay-1.conf".text = ''
@@ -43,19 +44,21 @@ lib.mkIf (role == "piceiver") {
       high_threshold_airplay_volume = -8.0;
       high_volume_idle_timeout_in_minutes = 180;
       mdns_backend = "avahi";
-      output_backend = "pw";
+      output_backend = "pipewire";
       volume_control_profile = "dasl_tapered";
     };
-    pw = {
+    pipewire = {
       application_name = "Shairport Sync AirPlay 1";
       node_name = "Shairport Sync AirPlay 1";
-      sink_target = "snapserver";
+      sink_target = "Combined_Stereo_Sink";
     };
     sessioncontrol = {
-      session_timeout = 20;
+      // Shairport Sync 5 requires at least 60 seconds.
+      session_timeout = 60;
     };
     diagnostics = {
-      log_verbosity = 2;
+      // Debug messages flood the journal, which is kept in RAM.
+      log_verbosity = 0;
     };
   '';
   networking.firewall = {
