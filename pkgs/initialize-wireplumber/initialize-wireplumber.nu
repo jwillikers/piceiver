@@ -4,7 +4,7 @@
 def get_node_object_id [
     node_name: string # The info.props."node.name"
     media_class: string # The media.class type of the node, i.e. "Audio/Sink"
-] [ string -> string ] {
+]: string -> int {
     (
         $in
         | from json
