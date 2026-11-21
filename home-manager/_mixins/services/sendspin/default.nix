@@ -20,6 +20,8 @@ let
   ];
 in
 lib.mkIf (lib.elem username installFor) {
+  # Make the player's subcommands available, i.e. sendspin-cli status.
+  home.packages = [ pkgs.sendspin-cli ];
   systemd.user.services = {
     # Sendspin player which Music Assistant discovers over mDNS and streams to.
     # Connections are encrypted, and a server must pair with the player before it can play.
