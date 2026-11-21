@@ -1,8 +1,7 @@
-_: {
+{ lib, useSecrets, ... }:
+{
   users.users.root = {
-    initialPassword = "V2psT!t0";
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAP56w70Wms1Dez5p7eGGgF0rmJd87VLX5CaVrDIRYaa jordan@precision5350.jwillikers.io"
-    ];
+    # With secrets, the password is set from the nix-secrets repository in nixos/_mixins/features/sops.
+    initialPassword = lib.mkIf (!useSecrets) "V2psT!t0";
   };
 }

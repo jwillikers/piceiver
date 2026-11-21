@@ -224,9 +224,11 @@ sudo systemctl restart nix-daemon.service
 Prefix the command with `systemd-inhibit` to prevent your computer from sleeping.
 This will take a long time.
 Like, [.line-through]#two days# a day in my case.
-The default package, `piceiver-sd-image`, cross-compiles the image from an x86_64 machine.
-On an aarch64 machine, build the `piceiver-sd-image-native` package instead.
-The `just build` recipe picks the right one automatically.
+The default package, `piceiver-basic-sd-image`, builds an image without any secrets, which has default passwords and no SSH keys.
+The `piceiver-sd-image` package instead uses secrets from my private nix-secrets repository, as described in <<Secrets>>.
+Both cross-compile the image from an x86_64 machine.
+On an aarch64 machine, build the packages with the `-native` suffix instead, i.e. `piceiver-basic-sd-image-native`.
+The `just build` recipe picks the right one automatically, i.e. `just build piceiver` for the image with secrets.
 +
 --
 [,sh]
@@ -293,16 +295,23 @@ just flash /dev/mmcblkX
 ----
 --
 
+. When using the image with secrets, write the SSH host keys to the SD card before booting it for the first time.
+The Piceiver derives the key that decrypts its secrets from its SSH host key, so it can't decrypt them without it.
+See <<Secrets>> for details.
++
+[,sh]
+----
+just provision-ssh-host-keys /dev/mmcblkX
+----
+
 When booting the Piceiver for the first time, give it a few extra minutes to start working as it has to resize the filesystem.
 
-Key-based authentication is required for the `root` user.
-So, unless you've configured that, log in as the user `jordan` with the default password `opW6&Aa`.
-The `root` password is `V2psT!t0`.
-I recommend configuring the authorized keys for the `root` user as well as your own user in the NixOS configuration.
-This is done for the `jordan` user link:nixos/_mixins/users/jordan/default.nix[here].
-With SSH keys configured, I recommend completely disabling password authentication for security.
-Also, you should change the default passwords for the users.
-See the <<Deploy>> section for how to deploy such configuration changes to a Piceiver that's already running.
+The basic image has no SSH keys.
+Log in over SSH as the user `jordan` with the default password `opW6&Aa`.
+The `root` password is `V2psT!t0`, but `root` can only log in over SSH with a key.
+Change these default passwords right away, since they're published here.
+For anything more than trying it out, I recommend setting up your own secrets as described in <<Secrets>>, which disables password logins over SSH entirely.
+See the <<Deploy>> section for how to deploy configuration changes to a Piceiver that's already running.
 
 == Deploy
 
@@ -321,18 +330,20 @@ It is assumed that you've already cloned the repository and changed to its direc
 nix develop
 ----
 . Deploy.
-This will prompt for the `sudo` password of the user `jordan`, which is `opW6&Aa` by default.
+For the basic configuration, this connects as the user `jordan` and prompts for its `sudo` password, which is `opW6&Aa` by default.
 +
 --
 [,sh]
 ----
-systemd-inhibit deploy --interactive-sudo true --ssh-user jordan .#piceiver
+just deploy piceiver-basic
 ----
 
-[TIP]
-====
-After deploying your own SSH key for authentication of the `root` user, the `--interactive-sudo true`  and `--ssh-user jordan` options can be omitted.
-====
+The configuration with secrets connects as `root` with an SSH key from the nix-secrets repository instead.
+
+[,sh]
+----
+just deploy piceiver
+----
 
 [TIP]
 ====
@@ -373,6 +384,108 @@ just --list
 `just check`:: Run the checks and format the code.
 `just pairing-code [host]`:: Show the most recent Sendspin pairing code logged by a receiver.
 `just sendspin-status [host]`:: Show the status of the Sendspin player on a receiver.
+`just set-password <user> [host]`:: Store a hashed password for a user in the nix-secrets repository.
+`just provision-ssh-host-keys <device> [host]`:: Write a host's SSH host keys from the nix-secrets repository to a freshly flashed SD card.
+`just save-sendspin-state [address] [host]`:: Save the Sendspin player's identity and pairing records from a receiver to the nix-secrets repository.
+`just rotate-ssh-host-keys [address] [host]`:: Replace a host's SSH host keys and re-encrypt its secrets for its new age key.
+
+== Secrets
+
+Secrets are managed with https://github.com/Mic92/sops-nix[sops-nix] and stored in my private nix-secrets repository.
+Only the configurations without the `-basic` suffix use secrets, i.e. `piceiver` and `piceiver-native`.
+The basic configurations, i.e. `piceiver-basic`, build without access to the nix-secrets repository.
+
+The secrets for the Piceiver are in `hosts/shared/piceiver/` in the nix-secrets repository.
+
+`secrets.yaml`::
+This file is encrypted with sops for my age key and the Piceiver's age key.
+* `passwords/jordan` and `passwords/root` are the hashed passwords for the users.
+Set them with the `just set-password <user>` recipe.
+* `sendspin-cli/state` contains the Sendspin player's identity and pairing records.
+It's copied into the player's state directory when it's missing, so that Music Assistant doesn't have to pair with the player again on a new SD card.
+The copy in the nix-secrets repository is a snapshot, so update it after pairing the player with a new server, then commit and push the nix-secrets repository and update the `nix-secrets` input.
++
+[,sh]
+----
+just save-sendspin-state piceiver.local
+----
+* `ssh/*` holds the Piceiver's SSH host keys.
+`authorized_keys/jordan` and `authorized_keys/root`::
+These are the public SSH keys allowed to log in as each user.
+They're kept out of this public repository so that images built by others don't grant me access.
+The key for `root` is restricted to my local network.
+
+The Piceiver decrypts its secrets with an age key derived from its SSH host key.
+An SD card image can't include the SSH host key, since anyone with a copy of the image or the Nix store could read it.
+Instead, write the SSH host keys from the nix-secrets repository to a freshly flashed SD card before booting it for the first time.
+
+[,sh]
+----
+just provision-ssh-host-keys /dev/mmcblkX
+----
+
+[IMPORTANT]
+====
+Back up the SSH host keys of every host that decrypts secrets, i.e. in a password manager, separately from the nix-secrets repository.
+A host's age key is derived from its SSH host key, so losing the key means the host can't decrypt its secrets, and every file encrypted for it has to be re-encrypted for a new key.
+The copy in the nix-secrets repository can only be decrypted with my age key or the host's own key, so it isn't a backup if both are lost.
+Print the Piceiver's private SSH host key to copy into a password manager with the following command.
+
+[,sh]
+----
+sops decrypt --extract '["ssh"]["ssh_host_ed25519_key"]' ../nix-secrets/hosts/shared/piceiver/secrets.yaml
+----
+
+Replace the backup whenever the SSH host keys are rotated.
+====
+
+=== Rotate the SSH Host Keys
+
+Rotate a host's SSH host keys if they may have been exposed.
+Since the host's age key is derived from its SSH host key, rotating them also changes the key that the host decrypts its secrets with.
+The order of the steps matters, as the host needs to be able to decrypt its secrets at every point.
+The `rotate-ssh-host-keys` recipe performs the following steps.
+
+. Generate new SSH host keys on the host in a temporary directory, leaving the SSH server on the current keys.
+. Store the new keys in the host's secrets file in the nix-secrets repository.
+. Replace the host's age key in the `.sops.yaml` file of the nix-secrets repository with the one derived from the new SSH host key.
+. Re-encrypt the host's secrets for the new age key with `sops updatekeys`.
+. Install the new SSH host keys on the host and restart the SSH server.
+. Replace the host's entries in `~/.ssh/known_hosts` with the new public keys.
+
+[,sh]
+----
+just rotate-ssh-host-keys piceiver.local
+----
+
+Then finish the rotation before the host reboots.
+Until the new configuration is deployed, the host's current system still contains secrets encrypted for its old age key, which it can no longer decrypt.
+
+. Commit and push the nix-secrets repository.
+. Update the `nix-secrets` input.
++
+[,sh]
+----
+nix flake update nix-secrets
+----
+. Deploy the new configuration.
++
+[,sh]
+----
+just deploy piceiver
+----
+. Back up the new private SSH host key and replace the old backup.
+
+The recipes expect the nix-secrets repository to be checked out next to this repository.
+Set the `NIX_SECRETS` environment variable to use a different location.
+
+To use your own secrets, change the URL of the `nix-secrets` input in the `flake.nix` file to your own repository with the same layout.
+Get the age key for the `.sops.yaml` file of your secrets repository from the Piceiver's public SSH host key with `ssh-to-age`.
+
+[,sh]
+----
+ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
+----
 
 == System Organization
 
@@ -613,6 +726,10 @@ It's running services listening on several ports, including open web interfaces 
 The Bluetooth is not particularly secure either, since nothing prevents someone from pairing.
 This device is intended for use in a private network, like a home network, and even there it is still important to consider access and if anyone on your network should be able to control the receiver server.
 
+With secrets, logging in over SSH requires an SSH key.
+Password logins over SSH are only enabled for the basic configuration, which has no SSH keys.
+`root` can only log in with an SSH key, which is restricted to the local network.
+
 === Switch to the core User
 
 It's not possible to log in to the `core` user account, but is possible to use `sudo` to switch to it.
@@ -694,12 +811,12 @@ There's a lot left I need to complete.
 The custom image, which is tailored for my personal usage, still has many outstanding tasks.
 First, the Nix stuff needs cleaned up.
 Significantly.
-My primary focus now is to add support for secrets handling via sops-nix in the configuration to allow me to set things like passwords.
-Then, there's still the fact there's not a proper plan in place for managing and updating the installation.
-Using a new image every time isn't gonna fly with flash storage or the value of anybody's time, so figuring out deployment is a high priority.
-After that, I need to figure out how to configure Net-SNMP in NixOS, as monitoring is a really nice feature to have in place.
+Next, I need to figure out how to configure Net-SNMP in NixOS, as monitoring is a really nice feature to have in place.
 
 .Todo
+* Prevent logging in as `root` over SSH entirely once the image is finalized and working as expected.
+For now, `root` may log in with an SSH key from the local network only.
+* Set up secrets for the Snappellite.
 * Fix the sub flipping on and off when idle.
 * Auto-mute speakers and subwoofer when nothing is being output.
 I think that the constant input from the digital optical input causes this.
@@ -709,7 +826,6 @@ However, I have to disable suspend for that node otherwise nothing ever comes th
 * Copy nixos configuration or flake to /etc/ in the image?
 * Add a button to trigger Bluetooth pairing.
 * Test how well the onboard Bluetooth works for the Pi 5.
-* Use nix-sops for secret management
 * Configure monitoring over Net-SNMP
 * Automatic updates?
 * Better filesystem such as Bcachefs or Btrfs
