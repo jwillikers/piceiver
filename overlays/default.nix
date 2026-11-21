@@ -164,6 +164,37 @@
     # });
   };
 
+  # Work around packages which fail to cross-compile.
+  # These overrides only apply when cross-compiling so native builds can still use the binary cache.
+  cross-fixes =
+    _final: prev:
+    prev.lib.optionalAttrs (!prev.stdenv.buildPlatform.canExecute prev.stdenv.hostPlatform) {
+      # The xtask helper used to build the documentation is built for the build platform,
+      # but pkg-config points it at the host platform's pcre2 library.
+      # Build pcre2 from the bundled sources instead, using the build platform's C compiler for the helper.
+      fish = prev.fish.overrideAttrs (prevAttrs: {
+        env = prevAttrs.env // {
+          PCRE2_SYS_STATIC = "1";
+          "CC_${builtins.replaceStrings [ "-" ] [ "_" ] prev.stdenv.buildPlatform.rust.rustcTarget}" =
+            "${prev.buildPackages.stdenv.cc}/bin/cc";
+        };
+      });
+      # The API documentation fails to find gi-docgen as a host dependency when cross-compiling.
+      gupnp-av = prev.gupnp-av.overrideAttrs (prevAttrs: {
+        nativeBuildInputs = prev.lib.lists.remove prev.buildPackages.gi-docgen prevAttrs.nativeBuildInputs;
+        mesonFlags = prev.lib.lists.remove "-Dgtk_doc=true" prevAttrs.mesonFlags ++ [ "-Dgtk_doc=false" ];
+        postFixup = (prevAttrs.postFixup or "") + ''
+          mkdir -p "$devdoc"
+        '';
+      });
+      # go generate builds a tool for the build platform, but links it with the cross compiler.
+      micro = prev.micro.overrideAttrs {
+        preBuild = ''
+          CC=${prev.buildPackages.stdenv.cc}/bin/cc CGO_ENABLED=0 GOOS= GOARCH= go generate ./runtime
+        '';
+      };
+    };
+
   # https://github.com/NixOS/nixpkgs/issues/154163
   allow-missing-modules = _final: prev: {
     makeModulesClosure = x: prev.makeModulesClosure (x // { allowMissing = true; });

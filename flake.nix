@@ -96,6 +96,7 @@
         additions
         ccache
         modifications
+        cross-fixes
         allow-missing-modules
         realtime
         unstablePackages
