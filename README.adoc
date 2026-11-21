@@ -11,6 +11,7 @@ ifdef::env-github[]
 endif::[]
 :deploy-rs: https://github.com/serokell/deploy-rs[deploy-rs]
 :FluidSynth: https://www.fluidsynth.org/[FluidSynth]
+:just: https://just.systems/[just]
 :Home-Assistant: https://www.home-assistant.io/[Home Assistant]
 :Music-Assistant: https://music-assistant.io/[Music Assistant]
 :Nix: https://nixos.org/[Nix]
@@ -42,6 +43,7 @@ This project is a build of a 2.1 channel receiver based on the Raspberry Pi.
 Out-of-the-box, it takes in audio from the digital optical input.
 The receiver leverages {PipeWire} and {WirePlumber} for the audio routing and session management.
 The software and configuration are built on NixOS and managed through a Nix flake in this repository.
+The Raspberry Pi vendor kernel and firmware come from {nixos-raspberrypi}.
 {Nix} has quite up-to-date software, is extensively customizable, and ensures that builds are reproducible.
 
 .Features
@@ -222,8 +224,9 @@ sudo systemctl restart nix-daemon.service
 Prefix the command with `systemd-inhibit` to prevent your computer from sleeping.
 This will take a long time.
 Like, [.line-through]#two days# a day in my case.
-The default, `basic-sd-image` package, produces a minimal image that requires no extra configuration.
-There is an alternative package, `full-sd-image`, which is more fully-featured, including more integrations, but requires customization and additional set up.
+The default package, `piceiver-sd-image`, cross-compiles the image from an x86_64 machine.
+On an aarch64 machine, build the `piceiver-sd-image-native` package instead.
+The `just build` recipe picks the right one automatically.
 +
 --
 [,sh]
@@ -279,7 +282,14 @@ Or just use a safe graphical application to flash the image to your SD card.
 
 [,sh]
 ----
-nix develop --command bash -c 'sudo env "PATH=$PATH" zstdcat result/sd-image/nixos-sd-image-*-aarch64-linux.img.zst | dd bs=1M status=progress of=/dev/mmcblkX'
+zstdcat result/sd-image/*.img.zst | sudo dd bs=4M status=progress conv=fsync of=/dev/mmcblkX
+----
+
+The `just flash` recipe runs the same command.
+
+[,sh]
+----
+just flash /dev/mmcblkX
 ----
 --
 
@@ -323,7 +333,46 @@ systemd-inhibit deploy --interactive-sudo true --ssh-user jordan .#piceiver
 ====
 After deploying your own SSH key for authentication of the `root` user, the `--interactive-sudo true`  and `--ssh-user jordan` options can be omitted.
 ====
+
+[TIP]
+====
+The deployment connects to `piceiver.local`.
+If your computer doesn't resolve mDNS hostnames, provide the Piceiver's hostname or IP address with the `--hostname` option.
+
+[,sh]
+----
+just deploy piceiver "--hostname 192.168.1.100"
+----
+====
 --
+
+[IMPORTANT]
+====
+Images built before the switch to {nixos-raspberrypi} have a 128 MiB firmware partition.
+The current bootloader copies the kernel and initrd for each generation to the firmware partition, which needs much more space.
+Deploying to such a Piceiver can fill up the firmware partition and leave it unable to boot.
+Instead, back up anything you need from the existing SD card, such as Bluetooth pairings in `/var/lib/bluetooth` and the SSH host keys in `/etc/ssh`, and flash a new image, which has a 1 GiB firmware partition.
+====
+
+== Common Tasks
+
+This project includes a link:.justfile[justfile] for common tasks.
+The development environment provides {just}.
+Run `just --list` to see all of the available recipes.
+
+[,sh]
+----
+nix develop
+just --list
+----
+
+`just build`:: Build the SD card image.
+`just flash <device>`:: Flash the SD card image to a device.
+`just deploy [target] [options]`:: Deploy a configuration with {deploy-rs}.
+`just update`:: Update the flake inputs and the packages in this repository.
+`just check`:: Run the checks and format the code.
+`just pairing-code [host]`:: Show the most recent Sendspin pairing code logged by a receiver.
+`just sendspin-status [host]`:: Show the status of the Sendspin player on a receiver.
 
 == System Organization
 
@@ -334,8 +383,8 @@ A loopback device is created which connects the digital optical input on the Sou
 To reduce latency, I've lowered the quantum as low as possible until just before audio begins to stutter.
 The WirePlumber configuration sets the correct device profile for the Sound Blaster card in addition to several other important tweaks like optimizations for the USB output and preventing the digital optical input from being suspended.
 The default sink, default source, plus initial volume levels are configured for WirePlumber by a systemd service which runs a few seconds after the WirePlumber service starts.
-Most audio applications interact directly with PipeWire, but the Sendspin player uses PulseAudio's API.
-Thus, the PipeWire's PulseAudio daemon is also running.
+The audio applications interact directly with PipeWire.
+PipeWire's PulseAudio server is also enabled for any applications which use PulseAudio's API.
 
 The audio routing is pretty much hard-coded for everything.
 Audio from the digital optical input is assumed to require low latency and high reliability, and thus is routed directly to the combined stereo and sub output.
@@ -347,6 +396,9 @@ Plus, it's one less thing I need to think about or troubleshoot.
 To make it possible to switch between outputs, I'd need to add a button and some kind of indicator to the Piceiver so you could properly switch between them on the device.
 
 // todo Create a pretty graph of the audio sources and sinks.
+
+To reduce wear on the SD card, the systemd journal is kept in RAM.
+Logs are lost when the Piceiver reboots or loses power.
 
 === AirPlay
 
@@ -428,15 +480,44 @@ The player advertises itself over mDNS on TCP port 8928, where Music Assistant d
 Music Assistant streams audio to the players and keeps their playback synchronized.
 On the Piceiver, the Sendspin player outputs to the combined stereo and sub output.
 
-Connections are encrypted, and Music Assistant must pair with a player before it can play to it.
-To pair, start pairing for the player in Music Assistant.
-The player logs a 6-digit pairing code, which you enter in Music Assistant.
-The code can be found in the journal on the receiver.
+==== Pair with Music Assistant
+
+Connections between Music Assistant and the Sendspin player are encrypted.
+Music Assistant must pair with the player before it can play anything on it.
+Pairing only needs to happen once per player, since both sides remember the pairing.
+Music Assistant 2.10 or newer is required.
+
+. In Music Assistant, open the player named after the receiver's hostname, i.e. `piceiver`.
+If there's an older, unavailable player with the same name, it's left over from a previous Sendspin player and can be removed.
+. Start pairing the player.
+Music Assistant asks for a 6-digit pairing code.
+. Get the pairing code that the player logs when pairing starts.
+Run the following command from the repository, replacing the hostname as needed.
++
+[,sh]
+----
+just pairing-code piceiver.local
+----
++
+Alternatively, find the code in the journal on the receiver.
++
+[,sh]
+----
+sudo journalctl --grep 'Pairing code' --since -15min
+----
+. Enter the pairing code in Music Assistant.
+The code is only valid for a few minutes, so start pairing again if it expires.
+. Set a reasonable volume for the player in Music Assistant before playing anything.
+A newly paired player starts at full volume, which may be quite loud.
+
+Check the status of the player, including whether it's paired and what it's playing, with the `sendspin-status` recipe.
 
 [,sh]
 ----
-sudo journalctl --grep 'Pairing code'
+just sendspin-status piceiver.local
 ----
+
+==== Update the Sendspin Player
 
 The player is packaged in this repository since it isn't yet available in Nixpkgs.
 Update it and the dependencies that it pins with the `update-packages` app.
@@ -461,6 +542,7 @@ So, I recommend a Raspberry PI 4 B instead at this point.
 If you opt for a USB audio device instead of the DAC Pro, you can even use a mainline kernel!
 I call it _Snappellite_, originally short for _Snapcast Satellite_.
 It runs a Sendspin player, so it shows up in Music Assistant alongside the Piceiver.
+Pair it with Music Assistant the same way as the Piceiver, as described in <<Pair with Music Assistant>>.
 
 // todo Actually add this picture?
 // ifdef::env-github[]
@@ -501,6 +583,7 @@ It still takes forever to build, so feel free to grab some of your favorite on-b
 
 The Piceiver and the Snappellite integrate with {Music-Assistant} as Sendspin players.
 Music Assistant discovers them automatically, and they can be grouped for synchronized multi-room playback.
+Each player must be paired with Music Assistant first, as described in <<Pair with Music Assistant>>.
 The Piceiver may also be added through Music Assistant's AirPlay and UPnP/DLNA player providers.
 The Piceiver can likewise be incorporated in {Home-Assistant} using the DLNA integration or via Music Assistant.
 
@@ -533,8 +616,6 @@ This device is intended for use in a private network, like a home network, and e
 === Switch to the core User
 
 It's not possible to log in to the `core` user account, but is possible to use `sudo` to switch to it.
-This isn't possible when using the basic image because that doesn't have an account with which to log in.
-Add a root password or another user account, like in the custom image, to be able to log in.
 The following command can be used to switch to the `core` user account.
 I use the fish shell, by the way.
 
@@ -685,7 +766,7 @@ The project's Code of Conduct is available in the link:CODE_OF_CONDUCT.adoc[Code
 
 This repository is licensed under the link:LICENSE[MIT license].
 
-© 2024 Jordan Williams
+© 2024-2026 Jordan Williams
 
 == Authors
 
