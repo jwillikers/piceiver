@@ -165,6 +165,23 @@
         # inherit overlays;
         apps = {
           inherit (nix-update-scripts.apps.${system}) update-nix-direnv update-nixos-release;
+          # Update the packages in pkgs/ which pin their sources.
+          update-packages = {
+            type = "app";
+            program = builtins.toString (
+              pkgs.writeShellScript "update-packages" ''
+                export PATH=${
+                  lib.makeBinPath [
+                    pkgs.git
+                    pkgs.nix-prefetch-git
+                    pkgs.nushell
+                  ]
+                }:$PATH
+                nu ${./pkgs/sendspin-cli/update.nu} "$@"
+                ${lib.getExe treefmtEval.config.build.wrapper}
+              ''
+            );
+          };
         };
         devShells.default = mkShell {
           inherit (pre-commit) shellHook;
