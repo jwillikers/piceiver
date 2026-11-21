@@ -1,8 +1,8 @@
 {
+  config,
   inputs,
   lib,
   modulesPath,
-  overlays,
   pkgs,
   role,
   stateVersion,
@@ -14,10 +14,7 @@
     # Use modules from other flakes
     # inputs.disko.nixosModules.disko
     inputs.home-manager.nixosModules.home-manager
-    inputs.lix-module.nixosModules.default
     inputs.nix-index-database.nixosModules.nix-index
-    inputs.raspberry-pi-nix.nixosModules.raspberry-pi
-    inputs.raspberry-pi-nix.nixosModules.sd-image
     # inputs.sops-nix.nixosModules.sops
     (modulesPath + "/installer/scan/not-detected.nix")
     ./_mixins/features
@@ -77,14 +74,6 @@
     };
     users.core = import ../home-manager;
   };
-
-  # Otherwise, the realtime overlay doesn't take.
-  # Probably because it needs to be evaluated after tho raspberry-pi-nix module.
-  nixpkgs.overlays = [
-    overlays.allow-missing-modules
-    overlays.ccache
-    overlays.realtime
-  ];
 
   programs = {
     command-not-found.enable = false;
@@ -178,5 +167,14 @@
 
   system = {
     inherit stateVersion;
+    nixos.tags =
+      let
+        cfg = config.boot.loader.raspberry-pi;
+      in
+      [
+        "raspberry-pi-${cfg.variant}"
+        cfg.bootloader
+        config.boot.kernelPackages.kernel.version
+      ];
   };
 }

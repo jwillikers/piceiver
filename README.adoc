@@ -12,17 +12,13 @@ endif::[]
 :deploy-rs: https://github.com/serokell/deploy-rs[deploy-rs]
 :FluidSynth: https://www.fluidsynth.org/[FluidSynth]
 :Home-Assistant: https://www.home-assistant.io/[Home Assistant]
-:Iris: https://github.com/jaedb/Iris[Iris]
-:Jellyfin: https://jellyfin.org/[Jellyfin]
-:Mopidy: https://mopidy.com/[Mopidy]
-:Mopidy-Jellyfin: https://github.com/jellyfin/mopidy-jellyfin[Mopidy-Jellyfin]
 :Music-Assistant: https://music-assistant.io/[Music Assistant]
 :Nix: https://nixos.org/[Nix]
 :PipeWire: https://pipewire.org/[PipeWire]
-:raspberry-pi-nix: https://github.com/nix-community/raspberry-pi-nix[raspberry-pi-nix]
+:nixos-raspberrypi: https://github.com/nvmd/nixos-raspberrypi[nixos-raspberrypi]
 :Rygel: https://gnome.pages.gitlab.gnome.org/rygel/[Rygel]
+:Sendspin: https://www.sendspin-audio.com/[Sendspin]
 :Shairport-Sync: https://github.com/mikebrady/shairport-sync[Shairport Sync]
-:Snapcast: https://github.com/badaix/snapcast[Snapcast]
 :WirePlumber: https://gitlab.freedesktop.org/pipewire/wireplumber[WirePlumber]
 
 A 2.1 channel DIY audio receiver with S/PDIF input.
@@ -55,8 +51,7 @@ The software and configuration are built on NixOS and managed through a Nix flak
 * AirPlay
 * Bluetooth
 * DLNA Digital Media Renderer
-* Cast directly from {Jellyfin}
-* Multi-room audio
+* Multi-room audio via {Sendspin}
 * Integrates with {Music-Assistant} and {Home-Assistant}
 * MIDI Synthesizer
 
@@ -332,21 +327,20 @@ After deploying your own SSH key for authentication of the `root` user, the `--i
 == System Organization
 
 The PipeWire and WirePlumber sessions run under the dedicated `core` user account.
-Almost all audio-related services run under this user's account because they need to interact with the PipeWire daemon.
-The exception is the Snapcast server, which runs as a system service under a dedicated user because it only handles audio over the network.
+All audio-related services run under this user's account because they need to interact with the PipeWire daemon.
 The PipeWire configuration creates a virtual sink that forwards audio to both the DigiAmp+ HAT and the USB audio interface.
 A loopback device is created which connects the digital optical input on the Sound Blaster card to this sink.
 To reduce latency, I've lowered the quantum as low as possible until just before audio begins to stutter.
 The WirePlumber configuration sets the correct device profile for the Sound Blaster card in addition to several other important tweaks like optimizations for the USB output and preventing the digital optical input from being suspended.
 The default sink, default source, plus initial volume levels are configured for WirePlumber by a systemd service which runs a few seconds after the WirePlumber service starts.
-Most audio applications interact directly with PipeWire, but a single holdout, the Snapcast client, is only capable of using PulseAudio's API.
+Most audio applications interact directly with PipeWire, but the Sendspin player uses PulseAudio's API.
 Thus, the PipeWire's PulseAudio daemon is also running.
 
 The audio routing is pretty much hard-coded for everything.
 Audio from the digital optical input is assumed to require low latency and high reliability, and thus is routed directly to the combined stereo and sub output.
 The digital optical input is connected to my TV, which is why it's configured this way.
 The synthesizer is also routed to the combined output because that also requires low latency
-All other inputs are over the network and audio only, so they are all connected to Snapcast.
+All other inputs, AirPlay, Bluetooth, DLNA, and Sendspin, are routed to the combined output as well.
 The hard-coded behavior is great when you know exactly how you want everything to be routed, so this setup works really well for me.
 Plus, it's one less thing I need to think about or troubleshoot.
 To make it possible to switch between outputs, I'd need to add a button and some kind of indicator to the Piceiver so you could properly switch between them on the device.
@@ -425,35 +419,19 @@ I've not yet tested whether Bluetooth MIDI works.
 
 {Rygel} provides a DLNA/UPnP Digital Media Renderer which can be used to playback audio from services that support the protocol.
 
-=== Jellyfin
+=== Multi-room Audio with Sendspin
 
-If you have a {Jellyfin} media server, you can cast directly to the Piceiver via {Mopidy} and the {Mopidy-Jellyfin} plugin.
-This requires the user credentials and the address of your Jellyfin server.
-Once configured, Jellyfin's web interface can be used to cast directly to the device.
-I'm planning on adding support for using secrets to populate credentials like this in the image.
-That could well end up being super complicated and not be worth it if you just want to get things set up.
-It's possible to configure credentials locally in the repository and deploy them to your server by following the instructions in the <<Deploy>> section.
-
-[TIP]
-====
-A Mopidy web server is available at `piceiver.local:6680/iris/`.
-The UI is provided by the {Iris} extension.
-This is nifty if you want to allow others to stream from your Jellyfin instance without requiring them to log to your Jellyfin account as your user.
-====
-
-=== Multi-room Audio with Snapcast
-
-Multi-room audio is handy feature, it's been incorporated in the Piceiver thanks to the {Snapcast} project.
-I haven't found anything to package up something to manage multi-room audio via PipeWire, although I'm certain it's possible.
-Until someone makes something like that, Snapcast is a great open-source solution for multi-room audio.
-Since it doesn't integrate directly with PipeWire, there will likely be an additional level of latency introduced by PipeWire.
-The Snapcast control webserver is accessible at `piceiver.local:1780`.
+Multi-room audio is handled by {Music-Assistant} and the {Sendspin} protocol.
+Each receiver runs a Sendspin player as a systemd service for the `core` user.
+The player advertises itself over mDNS on TCP port 8927, where Music Assistant discovers it automatically.
+Music Assistant streams audio to the players and keeps their playback synchronized.
+On the Piceiver, the Sendspin player outputs to the combined stereo and sub output.
 
 [NOTE]
 ====
-Snapcast introduces a substantial amount of latency in order to synchronize playback between the various playback clients.
+Synchronized playback introduces additional latency in order to keep the various players in sync.
 This isn't much of a problem when playing music, audio books, or podcasts.
-However, you'll want to avoid using it as the sink for video playback or any kind of realtime audio interactions such as calls, Mumble, etc.
+However, you'll want to avoid using it for video playback or any kind of realtime audio interactions such as calls, Mumble, etc.
 ====
 
 ==== Snappellite
@@ -462,7 +440,8 @@ A Raspberry Zero 2W and DAC Pro HAT _would_ make a great combination for creatin
 Alas, it's been a couple of years at this point where I can get the darn thing to not kernel panic when using a USB ethernet adapter.
 So, I recommend a Raspberry PI 4 B instead at this point.
 If you opt for a USB audio device instead of the DAC Pro, you can even use a mainline kernel!
-I call it _Snappellite_ for _Snapcast Satellite_.
+I call it _Snappellite_, originally short for _Snapcast Satellite_.
+It runs a Sendspin player, so it shows up in Music Assistant alongside the Piceiver.
 
 // todo Actually add this picture?
 // ifdef::env-github[]
@@ -499,78 +478,12 @@ nix build .#snappellite-sd-image
 
 It still takes forever to build, so feel free to grab some of your favorite on-brand iced tea while you wait.
 
-==== Stream Directly to the Snapcast Server with PipeWire
-
-PipeWire 1.2.0 added the https://docs.pipewire.org/page_module_snapcast_discover.html[Snapcast Discover module].
-This module makes it really easy to set up a stream from any device running PipeWire, like your laptop.
-Or maybe your phone.
-I don't want to assume anything about your sanity or lack thereof.
-To actually configure the Snapcast server to use the input stream, you'll probably want to use https://github.com/badaix/snapdroid[Snapdroid] or alternatively https://github.com/badaix/snapweb[Snapweb] directly from your browser.
-There's also a bunch of other https://github.com/badaix/snapcast?tab=readme-ov-file#contributions[third-party integrations] available.
-To use this module, configure PipeWire to load it with the appropriate settings on your device.
-The steps here walk through how to do this.
-
-. Create the configuration directory for PipeWire for your user.
-+
-[,sh]
-----
-mkdir --parents ~/.config/pipewire/pipewire.conf.d
-----
-
-. Drop in and configure the Snapcast Discover module in a config file fragment.
-+
-.~/.config/pipewire/pipewire.conf.d/51-snapcast-discover.conf
-[,lua]
-----
-context.modules = [
-{   name = libpipewire-module-snapcast-discover
-  args = {
-    stream.rules = [
-      {   matches = [
-          {
-                snapcast.ip = "~.*"
-          }
-      ]
-          actions = {
-              create-stream = {
-                  audio.rate = 48000
-                  audio.format = S32LE
-                  audio.channels = 2
-                  audio.position = [ FL FR ]
-                  node.name = "Piceiver Snapcast Sink"
-                  # If your firewall blocks ephemeral ports, open those ports or open the specific port in the following line and uncomment it.
-                  # Only after considering the security implications, of course.
-                  # server.address = [ "tcp:4711" ]
-                  snapcast.stream-name = "My Laptop"
-                  capture = true
-                  capture.props = {
-                      media.class = "Audio/Sink"
-                  }
-              }
-          }
-      }
-    ]
-  }
-}
-]
-----
-
-. Restart PipeWire to load the module.
-+
-[,sh]
-----
-systemctl --user restart pipewire
-----
-
-. Now you should be able see an additional stream available for Snapcast in the app, web interface, or what have you.
-
 === Music Assistant
 
-The Piceiver may be integrated with {Music-Assistant} as an external Snapcast server, an AirPlay playback provider, and a UPnP/DLNA player provider.
-The external Snapcast server option will create a Snapcast stream specific to Music Assistant.
-This requires manually switching the Snapcast stream back to the default `default` stream after playing anything through Music Assistant, otherwise you'll hear nothing.
-This is a pain, so I recommend using the AirPlay or UPnP/DLNA player providers instead unless you stream everything through Music Assistant.
-The Piceiver can likewise be incorporated directly in {Home-Assistant} using either the Snapcast or DLNA integrations or directly via Music Assistant.
+The Piceiver and the Snappellite integrate with {Music-Assistant} as Sendspin players.
+Music Assistant discovers them automatically, and they can be grouped for synchronized multi-room playback.
+The Piceiver may also be added through Music Assistant's AirPlay and UPnP/DLNA player providers.
+The Piceiver can likewise be incorporated in {Home-Assistant} using the DLNA integration or via Music Assistant.
 
 === Synthesizer
 
@@ -681,25 +594,23 @@ There's a lot left I need to complete.
 The custom image, which is tailored for my personal usage, still has many outstanding tasks.
 First, the Nix stuff needs cleaned up.
 Significantly.
-My primary focus now is to add support for secrets handling via sops-nix in the configuration to allow me to set things like passwords as well as credentials for my Jellyfin server.
+My primary focus now is to add support for secrets handling via sops-nix in the configuration to allow me to set things like passwords.
 Then, there's still the fact there's not a proper plan in place for managing and updating the installation.
 Using a new image every time isn't gonna fly with flash storage or the value of anybody's time, so figuring out deployment is a high priority.
 After that, I need to figure out how to configure Net-SNMP in NixOS, as monitoring is a really nice feature to have in place.
 
 .Todo
-* Use a reverse-proxy for the Snapcast and Mopidy servers?
 * Fix the sub flipping on and off when idle.
 * Auto-mute speakers and subwoofer when nothing is being output.
 I think that the constant input from the digital optical input causes this.
 However, I have to disable suspend for that node otherwise nothing ever comes through.
 * FCast for streaming, but right now I'd have to write a receiver for audio only myself and then I'd have to write integrations and apps that actually use the protocol.
-* Snapcast microcontroller for playback
+* Sendspin microcontroller for playback
 * Copy nixos configuration or flake to /etc/ in the image?
 * Add a button to trigger Bluetooth pairing.
 * Test how well the onboard Bluetooth works for the Pi 5.
 * Use nix-sops for secret management
 * Configure monitoring over Net-SNMP
-* A mechanism for switching the output, so as to choose between the lower latency stereo output or the Snapcast output.
 * Automatic updates?
 * Better filesystem such as Bcachefs or Btrfs
 * Automatically log in to Tailscale
@@ -715,12 +626,10 @@ However, I have to disable suspend for that node otherwise nothing ever comes th
 
 .Documentation
 * https://www.fluidsynth.org/api/fluidsettings.html[FluidSynth Settings Documentation]
-* https://docs.mopidy.com/latest/[Mopidy Documentation]
-* https://jellyfin.org/docs/general/clients/mopidy[Mopidy Jellyfin Documentation]
 * https://nixos.org/manual/nixos/stable/[NixOS Manual]
 * https://docs.pipewire.org/[PipeWire Documentation]
 * https://github.com/mikebrady/shairport-sync/blob/master/scripts/shairport-sync.conf[shairport-sync Configuration]
-* https://github.com/badaix/snapcast/blob/develop/doc/configuration.md[Snapcast Configuration]
+* https://github.com/Sendspin/sendspin-go[Sendspin Go]
 * https://pipewire.pages.freedesktop.org/wireplumber/[WirePlumber Documentation]
 
 // todo Add more.
@@ -740,17 +649,13 @@ A few of these projects are enumerated below.
 * https://asciidoctor.org/[Asciidoctor]
 * {deploy-rs}
 * {FluidSynth}
-* {Iris}
-* {Jellyfin}
 * https://www.linuxfoundation.org/[Linux]
-* {Mopidy}
-* {Mopidy-Jellyfin}
 * {Nix}
 * {PipeWire}
 * {Rygel}
-* {raspberry-pi-nix}
+* {nixos-raspberrypi}
+* {Sendspin}
 * {Shairport-Sync}
-* {Snapcast}
 * {WirePlumber}
 
 == Code of Conduct

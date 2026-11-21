@@ -40,7 +40,7 @@ deploy target="" options="":
             "{{ target }}"
         }
     )
-    ^systemd-inhibit deploy {{ options }} $".#($target)"
+    ^systemd-inhibit --what=sleep:shutdown deploy {{ options }} $".#($target)"
 
 flash device:
     zstdcat result/sd-image/nixos-sd-image-*-aarch64-linux.img.zst | sudo dd bs=1M status=progress of={{ device }}

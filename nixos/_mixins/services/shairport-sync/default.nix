@@ -22,7 +22,7 @@ lib.mkIf (role == "piceiver") {
       volume_control_profile = "dasl_tapered";
     };
     pw = {
-      sink_target = "snapserver";
+      sink_target = "Combined_Stereo_Sink";
     };
     sessioncontrol = {
       session_timeout = 20;
@@ -49,7 +49,7 @@ lib.mkIf (role == "piceiver") {
     pw = {
       application_name = "Shairport Sync AirPlay 1";
       node_name = "Shairport Sync AirPlay 1";
-      sink_target = "snapserver";
+      sink_target = "Combined_Stereo_Sink";
     };
     sessioncontrol = {
       session_timeout = 20;

@@ -1,4 +1,8 @@
-_: {
+{
+  pkgs,
+  ...
+}:
+{
   users.groups.core.gid = 818;
   users.users.core = {
     description = "Core";
@@ -12,6 +16,6 @@ _: {
     home = "/home/core";
     isSystemUser = true;
     linger = true;
-    shell = null;
+    shell = pkgs.shadow;
   };
 }

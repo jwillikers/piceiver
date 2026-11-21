@@ -2,9 +2,13 @@
   description = "Pi 2.1 channel stereo receiver";
 
   nixConfig = {
-    extra-substituters = [ "https://nix-community.cachix.org" ];
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      "https://nixos-raspberrypi.cachix.org"
+    ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
     ];
   };
 
@@ -24,13 +28,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # todo Look into musnix: https://github.com/musnix/musnix
     home-manager = {
-      # todo Use upstream when my fixes get merged for cross-compiling Mopidy with plugins.
-      # url = "github:nix-community/home-manager/release-24.05";
-      url = "github:jwillikers/home-manager/mopidy-fixes-24.11";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    lix-module = {
-      url = "git+https://git.lix.systems/lix-project/nixos-module.git";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # todo This is probably unnecessary here.
@@ -43,22 +41,19 @@
       url = "github:jwillikers/nix-update-scripts";
       inputs = {
         flake-utils.follows = "flake-utils";
-        # nixpkgs.follows = "nixpkgs";
+        nixpkgs.follows = "nixpkgs";
         pre-commit-hooks.follows = "pre-commit-hooks";
         treefmt-nix.follows = "treefmt-nix";
       };
     };
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        nixpkgs-stable.follows = "nixpkgs";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
-    raspberry-pi-nix = {
-      url = "github:nix-community/raspberry-pi-nix";
+    nixos-raspberrypi = {
+      url = "github:nvmd/nixos-raspberrypi/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # todo Use sops-nix for secret management.
@@ -71,7 +66,6 @@
     # sops-nix = {
     #   url = "github:Mic92/sops-nix";
     #   inputs.nixpkgs.follows = "nixpkgs";
-    #   inputs.nixpkgs-stable.follows = "nixpkgs";
     # };
     # todo Should I use nixos-hardware?
     # nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -88,6 +82,7 @@
       deploy-rs,
       flake-utils,
       nix-update-scripts,
+      nixos-raspberrypi,
       nixpkgs,
       pre-commit-hooks,
       # secrets,
@@ -104,20 +99,38 @@
         allow-missing-modules
         realtime
         unstablePackages
-        unstable-shairport-sync
         shairport-sync-airplay2
       ];
-      pkgsArmCross = import nixpkgs {
-        # inherit system;
-        system = "x86_64-linux";
-        crossSystem.config = "aarch64-unknown-linux-gnu";
-        overlays = overlaysList;
-      };
-      pkgsArmNative = import nixpkgs {
-        overlays = overlaysList;
-        system = "aarch64-linux";
-      };
-      inherit (nixpkgs.lib) nixosSystem;
+      # nixos-raspberrypi's nixosSystem sets nixpkgs.hostPlatform to aarch64-linux and injects the vendor kernel and firmware overlays.
+      # Don't pass a pre-built pkgs here, otherwise nixpkgs.overlays, including nixos-raspberrypi's, are ignored.
+      mkRaspberryPiSystem =
+        {
+          config,
+          cross ? false,
+        }:
+        nixos-raspberrypi.lib.nixosSystem {
+          inherit nixpkgs;
+          specialArgs = {
+            inherit inputs overlays stateVersion;
+            inherit (config)
+              audioHAT
+              hostname
+              raspberryPiModel
+              role
+              username
+              ;
+          };
+          modules = [
+            ./nixos
+            {
+              nixpkgs = {
+                overlays = lib.mkAfter overlaysList;
+              }
+              // lib.optionalAttrs cross { buildPlatform = "x86_64-linux"; };
+            }
+          ];
+        };
+      inherit (nixpkgs) lib;
       piceiverRaspberryPi5Config = {
         audioHAT = "DigiAmp+";
         hostname = "piceiver";
@@ -158,16 +171,15 @@
             with pkgs;
             [
               asciidoctor
-              # colmena.packages.${system}.colmena
               pkgs.deploy-rs
               fish
               just
               lychee
               zstd
               treefmtEval.config.build.wrapper
-              # Make formatters available for IDE's.
-              (builtins.attrValues treefmtEval.config.build.programs)
             ]
+            # Make formatters available for IDE's.
+            ++ (builtins.attrValues treefmtEval.config.build.programs)
             ++ pre-commit.enabledPackages;
         };
         formatter = treefmtEval.config.build.wrapper;
@@ -209,64 +221,18 @@
         sshUser = "root";
       };
       nixosConfigurations = {
-        piceiver = nixosSystem {
-          pkgs = pkgsArmCross;
-          specialArgs = {
-            inherit inputs overlays stateVersion;
-            inherit (piceiverRaspberryPi5Config)
-              audioHAT
-              hostname
-              raspberryPiModel
-              role
-              username
-              ;
-          };
-          modules = [ ./nixos ];
+        piceiver = mkRaspberryPiSystem {
+          config = piceiverRaspberryPi5Config;
+          cross = true;
         };
-        piceiver-native = nixosSystem {
-          pkgs = pkgsArmNative;
-          specialArgs = {
-            inherit inputs overlays stateVersion;
-            inherit (piceiverRaspberryPi5Config)
-              audioHAT
-              hostname
-              raspberryPiModel
-              role
-              username
-              ;
-          };
-          modules = [ ./nixos ];
+        piceiver-native = mkRaspberryPiSystem { config = piceiverRaspberryPi5Config; };
+        snappellite = mkRaspberryPiSystem {
+          config = snappelliteRaspberryPi4Config;
+          cross = true;
         };
-        snappellite = nixosSystem {
-          pkgs = pkgsArmCross;
-          specialArgs = {
-            inherit inputs overlays stateVersion;
-            inherit (snappelliteRaspberryPi4Config)
-              audioHAT
-              hostname
-              raspberryPiModel
-              role
-              username
-              ;
-          };
-          modules = [ ./nixos ];
-        };
-        snappellite-native = nixosSystem {
-          pkgs = pkgsArmNative;
-          specialArgs = {
-            inherit inputs overlays stateVersion;
-            inherit (snappelliteRaspberryPi4Config)
-              audioHAT
-              hostname
-              raspberryPiModel
-              role
-              username
-              ;
-          };
-          modules = [ ./nixos ];
-        };
+        snappellite-native = mkRaspberryPiSystem { config = snappelliteRaspberryPi4Config; };
         # todo Provide builds of the Snappellite image which use the mainline Linux kernel.
-        # snappellite-mainline = nixosSystem {
+        # snappellite-mainline = nixosSystemFull {
         #   pkgs = pkgsArmCross;
         #   specialArgs = {
         #     inherit inputs overlays stateVersion;
@@ -274,7 +240,7 @@
         #   };
         #   modules = [ ./nixos ];
         # };
-        # snappellite-mainline-native = nixosSystem {
+        # snappellite-mainline-native = nixosSystemFull {
         #   pkgs = pkgsArmNative;
         #   specialArgs = {
         #     inherit inputs overlays stateVersion;
