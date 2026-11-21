@@ -29,6 +29,8 @@ lib.mkIf (role == "piceiver") {
   hardware = {
     bluetooth = {
       enable = true;
+      # The hostname plugin overrides the name set in the General section with the hostname.
+      disabledPlugins = [ "hostname" ];
       package = pkgs.bluez-experimental;
       settings = {
         General = {
@@ -37,6 +39,8 @@ lib.mkIf (role == "piceiver") {
           # PairableTimeout = 300;
           Class = "0x200414";
           Experimental = true;
+          # The name advertised to devices when no alias has been set.
+          Name = "Piceiver";
         };
       };
     };
@@ -47,24 +51,6 @@ lib.mkIf (role == "piceiver") {
   #   KERNEL=="input[0-9]*", RUN+="${bluetoothUdev}/bin/bluetooth-udev"
   # '';
   systemd.services = {
-    "bluetooth-init" = {
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${pkgs.bluez}/bin/bluetoothctl system-alias \"Piceiver\"";
-      };
-      unitConfig = {
-        Description = "Set initial Bluetooth settings";
-        After = [
-          "bluetooth.target"
-          "network-online.target"
-        ];
-        Requires = [
-          "bluetooth.target"
-          "network-online.target"
-        ];
-      };
-      wantedBy = [ "bluetooth.target" ];
-    };
     "hciconfig@" = {
       script = ''
         ${pkgs.bluez}/bin/hciconfig "$1" piscan
