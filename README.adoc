@@ -492,6 +492,7 @@ ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
 The PipeWire and WirePlumber sessions run under the dedicated `core` user account.
 All audio-related services run under this user's account because they need to interact with the PipeWire daemon.
 The PipeWire configuration creates a virtual sink that forwards audio to both the DigiAmp+ HAT and the USB audio interface.
+The DigiAmp+ HAT drives the bookshelf speakers, and the USB audio interface drives the subwoofer.
 A loopback device is created which connects the digital optical input on the Sound Blaster card to this sink.
 To reduce latency, I've lowered the quantum as low as possible until just before audio begins to stutter.
 The WirePlumber configuration sets the correct device profile for the Sound Blaster card in addition to several other important tweaks like optimizations for the USB output and preventing the digital optical input from being suspended.
@@ -509,6 +510,20 @@ Plus, it's one less thing I need to think about or troubleshoot.
 To make it possible to switch between outputs, I'd need to add a button and some kind of indicator to the Piceiver so you could properly switch between them on the device.
 
 // todo Create a pretty graph of the audio sources and sinks.
+
+=== Bass Management
+
+The bass is split between the bookshelf speakers and the subwoofer at a crossover frequency of 80 Hz.
+A high-pass filter removes the bass below 80 Hz from the audio for the bookshelf speakers, so that they don't have to reproduce the deepest bass.
+This reduces distortion and lets them play louder.
+The subwoofer receives the full range of the audio and its own low-pass filter takes the bass below the crossover frequency.
+
+The high-pass filter is a fourth-order Linkwitz-Riley filter, which has a slope of 24 dB per octave.
+It matches the low-pass filter of my JBL SUB 550P subwoofer, so that the bookshelf speakers and the subwoofer combine to a flat frequency response at the crossover frequency.
+Set the crossover frequency on the subwoofer to 80 Hz to match.
+Then, from the listening position, set the subwoofer's phase switch to whichever setting sounds fuller around the crossover frequency and adjust its level.
+The high-pass filter is configured in link:pkgs/pipewire-config/pipewire.conf.d/49-speaker-high-pass.conf[49-speaker-high-pass.conf].
+Change the frequency there for speakers that play deeper or not as deep.
 
 To reduce wear on the SD card, the systemd journal is kept in RAM.
 Logs are lost when the Piceiver reboots or loses power.
