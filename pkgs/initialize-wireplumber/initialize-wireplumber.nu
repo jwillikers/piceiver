@@ -42,7 +42,7 @@ def main [] {
         (wpctl_node $pw_dump Combined_Stereo_Sink Audio/Sink set-default)
         (wpctl_node $pw_dump alsa_output.platform-1000110000.pcie-pci-0001_02_00.0.iec958-stereo Audio/Sink set-volume 40%)
         (wpctl_node $pw_dump alsa_output.platform-soc_107c000000_sound.stereo-fallback Audio/Sink set-volume 85%)
-        (wpctl_node $pw_dump alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo Audio/Sink set-volume 80%)
+        (wpctl_node $pw_dump alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo Audio/Sink set-volume 50%)
     ]
     let skipped = ($results | where {|result| not $result } | length)
     if $skipped > 0 {
